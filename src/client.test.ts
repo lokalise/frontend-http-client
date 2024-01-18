@@ -139,7 +139,6 @@ describe('frontend-http-client', () => {
 			await expect(
 				sendPost(client, {
 					path: '/',
-					body: {} as any, // otherwise it breaks at compilation already
 					queryParams: testQueryParams,
 					queryParamsSchema: queryParamsSchema as any,
 					responseBodySchema: responseSchema,
@@ -172,7 +171,6 @@ describe('frontend-http-client', () => {
 
 			const response = await sendPost(client, {
 				path: '/',
-				body: {} as any, // otherwise it breaks at compilation already
 				queryParams: testQueryParams,
 				queryParamsSchema: undefined,
 				responseBodySchema: responseSchema,
@@ -365,7 +363,6 @@ describe('frontend-http-client', () => {
 			await expect(
 				sendPut(client, {
 					path: '/',
-					body: {} as any, // otherwise it breaks at compilation already
 					queryParams: testQueryParams,
 					queryParamsSchema: queryParamsSchema as any,
 					responseBodySchema: responseSchema,
@@ -541,7 +538,6 @@ describe('frontend-http-client', () => {
 			await expect(
 				sendPatch(client, {
 					path: '/',
-					body: {} as any, // otherwise it breaks at compilation already
 					queryParams: testQueryParams,
 					queryParamsSchema: queryParamsSchema as any,
 					responseBodySchema: responseSchema,
