@@ -130,13 +130,11 @@ async function sendResourceChange<
 		return Promise.reject(queryParams.error)
 	}
 
-	return (
-		wretch[method](body.result, `${params.path}${queryParams.result}`)
-			// HTTP 204 No Content response should return undefined body
-			.res((response) => (response.status === 204 ? undefined : response.json()))
-			.then((response) => {
+	return wretch[method](body.result, `${params.path}${queryParams.result}`).res(
+		async (response) => {
+			if (response.headers.get('content-type')?.includes('application/json')) {
 				const parsedResponse = parseResponseBody({
-					response: response as ResponseBody,
+					response: (await response.json()) as ResponseBody,
 					responseBodySchema: params.responseBodySchema,
 					path: params.path,
 				})
@@ -146,7 +144,10 @@ async function sendResourceChange<
 				}
 
 				return parsedResponse.result
-			})
+			}
+
+			return response as unknown as Promise<ResponseBody>
+		},
 	)
 }
 

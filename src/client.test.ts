@@ -47,14 +47,14 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPost('/').thenReply(204)
 
-			const responseSchema = z.void()
-
 			const responseBody = await sendPost(client, {
 				path: '/',
-				responseBodySchema: responseSchema,
 			})
 
-			expect(responseBody).toBeUndefined()
+			expect(responseBody).containSubset({
+				status: 204,
+				statusText: 'No Content',
+			})
 		})
 
 		it('throws an error if response does not pass validation', async () => {
@@ -139,6 +139,7 @@ describe('frontend-http-client', () => {
 			await expect(
 				sendPost(client, {
 					path: '/',
+					body: {} as any, // otherwise it breaks at compilation already
 					queryParams: testQueryParams,
 					queryParamsSchema: queryParamsSchema as any,
 					responseBodySchema: responseSchema,
@@ -272,14 +273,14 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPut('/').thenReply(204)
 
-			const responseSchema = z.void()
-
 			const responseBody = await sendPut(client, {
 				path: '/',
-				responseBodySchema: responseSchema,
 			})
 
-			expect(responseBody).toBeUndefined()
+			expect(responseBody).containSubset({
+				status: 204,
+				statusText: 'No Content',
+			})
 		})
 
 		it('throws an error if response does not pass validation', async () => {
