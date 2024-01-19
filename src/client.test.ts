@@ -4,7 +4,7 @@ import { getLocal } from 'mockttp'
 import wretch from 'wretch'
 import { z } from 'zod'
 
-import { sendDelete, sendGet, sendPatch, sendPost, sendPut } from './client'
+import { sendDelete, sendGet, sendPatch, sendPost, sendPut } from './client.js'
 
 describe('frontend-http-client', () => {
 	const mockServer = getLocal()

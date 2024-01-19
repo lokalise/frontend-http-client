@@ -1,5 +1,9 @@
 # Frontend HTTP client
 
+Opinionated HTTP client for the frontend.
+
+Note that it is a ESM-only package.
+
 ## Basic usage
 
 ```ts

@@ -1,14 +1,14 @@
 import { stringify } from 'fast-querystring'
 import { type ZodSchema, type ZodError } from 'zod'
 
-import { type Either, failure, success, isFailure } from './either'
+import { type Either, failure, success, isFailure } from './either.js'
 import type {
 	CommonRequestParams,
 	NoQueryParams,
 	QueryParams,
 	ResourceChangeParams,
 	WretchInstance,
-} from './types'
+} from './types.js'
 
 function parseRequestBody<RequestBody>({
 	body,
