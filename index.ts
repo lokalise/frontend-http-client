@@ -1,1 +1,1 @@
-export { sendPost, sendGet, sendPut, sendDelete, sendPatch } from './src/client'
+export { sendPost, sendGet, sendPut, sendDelete, sendPatch } from './src/client.js'
