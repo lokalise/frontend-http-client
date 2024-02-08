@@ -1,41 +1,43 @@
 import type { Wretch } from 'wretch'
-import type { ZodSchema } from 'zod'
+import type { ZodSchema, z } from 'zod'
+
+type FreeformRecord = Record<string, any>
 
 export type CommonRequestParams<ResponseBody> = {
 	path: string
 	responseBodySchema?: ZodSchema<ResponseBody>
 }
 
-export type BodyRequestParams<RequestBody extends object, ResponseBody> = {
-	body: RequestBody | undefined
-	requestBodySchema: ZodSchema<RequestBody> | undefined
+export type BodyRequestParams<RequestBodySchema extends z.ZodSchema, ResponseBody> = {
+	body: z.input<RequestBodySchema> | undefined
+	requestBodySchema: RequestBodySchema | undefined
 } & CommonRequestParams<ResponseBody>
 
-export type NoBodyRequestParams<ResponseBody> = {
-	body?: never
+export type FreeBodyRequestParams<ResponseBody> = {
+	body?: FreeformRecord
 	requestBodySchema?: never
 } & CommonRequestParams<ResponseBody>
 
-export type QueryParams<RequestQueryParams extends object | undefined, ResponseBody> = {
-	queryParams: RequestQueryParams | undefined
-	queryParamsSchema: ZodSchema<RequestQueryParams> | undefined
+export type QueryParams<RequestQuerySchema extends z.ZodSchema, ResponseBody> = {
+	queryParams: z.input<RequestQuerySchema> | undefined
+	queryParamsSchema: RequestQuerySchema | undefined
 } & CommonRequestParams<ResponseBody>
 
-export type NoQueryParams<ResponseBody> = {
-	queryParams?: never
+export type FreeQueryParams<ResponseBody> = {
+	queryParams?: FreeformRecord
 	queryParamsSchema?: never
 } & CommonRequestParams<ResponseBody>
 
 export type ResourceChangeParams<
 	RequestBody,
 	ResponseBody,
-	RequestQueryParams extends object | undefined = undefined,
-> = (RequestBody extends object
+	RequestQuerySchema extends z.Schema | undefined = undefined,
+> = (RequestBody extends z.Schema
 	? BodyRequestParams<RequestBody, ResponseBody>
-	: NoBodyRequestParams<ResponseBody>) &
-	(RequestQueryParams extends undefined
-		? NoQueryParams<ResponseBody>
-		: QueryParams<RequestQueryParams, ResponseBody>)
+	: FreeBodyRequestParams<ResponseBody>) &
+	(RequestQuerySchema extends z.Schema
+		? QueryParams<RequestQuerySchema, ResponseBody>
+		: FreeQueryParams<ResponseBody>)
 
 // We don't know which addons Wretch will have, and we don't really care, hence any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
