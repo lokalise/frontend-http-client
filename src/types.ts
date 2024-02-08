@@ -1,7 +1,7 @@
 import type { Wretch } from 'wretch'
 import type { ZodSchema, z } from 'zod'
 
-type FreeformRecord = Record<string, any>
+type FreeformRecord = Record<string, unknown>
 
 export type CommonRequestParams<ResponseBody> = {
 	path: string

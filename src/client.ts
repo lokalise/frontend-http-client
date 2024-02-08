@@ -10,21 +10,21 @@ import type {
 	WretchInstance,
 } from './types.js'
 
-function parseRequestBody<RequestBody>({
+function parseRequestBody<RequestBodySchema extends z.Schema>({
 	body,
 	requestBodySchema,
 	path,
 }: {
-	body: RequestBody
-	requestBodySchema?: z.ZodSchema<RequestBody>
+	body: unknown
+	requestBodySchema?: RequestBodySchema
 	path: string
-}): Either<z.ZodError, RequestBody> {
+}): Either<z.ZodError, z.input<RequestBodySchema>> {
 	if (!body) {
 		return success(body)
 	}
 
 	if (!requestBodySchema) {
-		return success(body as RequestBody)
+		return success(body)
 	}
 
 	const result = requestBodySchema.safeParse(body)
@@ -46,7 +46,7 @@ function parseQueryParams<RequestQuerySchema extends z.Schema>({
 	queryParamsSchema,
 	path,
 }: {
-	queryParams: z.input<RequestQuerySchema>
+	queryParams: unknown
 	queryParamsSchema?: RequestQuerySchema
 	path: string
 }): Either<z.ZodError, string> {
