@@ -39,7 +39,7 @@
 		"build:dev": "tsc",
 		"build:release": "tsup",
 		"clean": "rimraf dist .eslintcache",
-		"lint": "eslint --cache --max-warnings=0 . && prettier --check --log-level warn src \"**/*.{json,md,ts,tsx}\" && tsc --noEmit",
+		"lint": "eslint --cache --max-warnings=0 . && prettier --check src \"**/*.{json,md,ts,tsx}\" && tsc --noEmit",
 		"lint:fix": "prettier --write src \"**/*.{json,md,ts,tsx}\" --log-level=warn && eslint . --fix",
 		"test": "vitest run",
 		"prepublishOnly": "npm run clean && npm run build:release"
