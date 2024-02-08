@@ -1,5 +1,5 @@
 import { stringify } from 'fast-querystring'
-import { type ZodSchema, type ZodError, z } from 'zod'
+import type { z } from 'zod'
 
 import { type Either, failure, success, isFailure } from './either.js'
 import type {
@@ -16,9 +16,9 @@ function parseRequestBody<RequestBody>({
 	path,
 }: {
 	body: RequestBody
-	requestBodySchema?: ZodSchema<RequestBody>
+	requestBodySchema?: z.ZodSchema<RequestBody>
 	path: string
-}): Either<ZodError, RequestBody> {
+}): Either<z.ZodError, RequestBody> {
 	if (!body) {
 		return success(body)
 	}
@@ -49,7 +49,7 @@ function parseQueryParams<RequestQuerySchema extends z.Schema>({
 	queryParams: z.input<RequestQuerySchema>
 	queryParamsSchema?: RequestQuerySchema
 	path: string
-}): Either<ZodError, string> {
+}): Either<z.ZodError, string> {
 	if (!queryParams) {
 		return success('')
 	}
@@ -78,9 +78,9 @@ function parseResponseBody<ResponseBody>({
 	path,
 }: {
 	response: ResponseBody
-	responseBodySchema?: ZodSchema<ResponseBody>
+	responseBodySchema?: z.ZodSchema<ResponseBody>
 	path: string
-}): Either<ZodError, ResponseBody> {
+}): Either<z.ZodError, ResponseBody> {
 	if (!responseBodySchema) {
 		return success(response)
 	}
