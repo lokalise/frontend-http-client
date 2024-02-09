@@ -158,7 +158,7 @@ describe('frontend-http-client', () => {
 			`)
 		})
 
-		it('allows posting request with correct params even if queryParamsSchema is not provided', async () => {
+		it('allows posting request with correct params even if schemas are not provided', async () => {
 			const client = wretch(mockServer.url)
 
 			const testQueryParams = { param1: 'test', param2: 'test' }
@@ -174,6 +174,8 @@ describe('frontend-http-client', () => {
 				queryParams: testQueryParams,
 				queryParamsSchema: undefined,
 				responseBodySchema: responseSchema,
+				body: { id: 1 },
+				requestBodySchema: undefined,
 			})
 
 			expect(response).toEqual({ success: true })
@@ -236,6 +238,32 @@ describe('frontend-http-client', () => {
 
 			const response = await sendPost(client, {
 				path: '/',
+			})
+
+			expect(response).toEqual({ success: true })
+		})
+
+		it('should check types against schema input type', async () => {
+			const client = wretch(mockServer.url)
+			await mockServer.forPost('/').thenJson(200, { success: true })
+
+			const schema = z.object({
+				numberAsText: z
+					.number()
+					.transform((val) => val.toString())
+					.pipe(z.string()),
+			})
+			const responseSchema = z.object({
+				success: z.boolean(),
+			})
+
+			const response = await sendPost(client, {
+				path: '/',
+				queryParams: { numberAsText: 1 },
+				queryParamsSchema: schema,
+				responseBodySchema: responseSchema,
+				body: { numberAsText: 1 },
+				requestBodySchema: schema,
 			})
 
 			expect(response).toEqual({ success: true })
@@ -718,6 +746,59 @@ describe('frontend-http-client', () => {
 			})
 
 			expect(response.data.code).toBe(99)
+		})
+
+		it('should work without specifying an schema', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forGet('/').thenJson(200, { data: { code: 99 } })
+
+			const responseSchema = z.object({
+				data: z.object({
+					code: z.number(),
+				}),
+			})
+
+			const response = await sendGet(client, {
+				path: '/',
+				queryParams: {
+					requestCode: 99,
+				},
+				queryParamsSchema: undefined,
+				responseBodySchema: responseSchema,
+			})
+
+			expect(response.data.code).toBe(99)
+		})
+
+		it('should check types against schema input type', async () => {
+			const client = wretch(mockServer.url)
+			await mockServer.forGet('/').thenJson(200, { data: { code: 99 } })
+
+			const querySchema = z.object({
+				numberAsText: z
+					.number()
+					.transform((val) => val.toString())
+					.pipe(z.string()),
+			})
+			const responseSchema = z.object({
+				data: z.object({
+					code: z.number(),
+				}),
+			})
+
+			const responseBody = await sendGet(client, {
+				path: '/',
+				queryParams: { numberAsText: 1 },
+				queryParamsSchema: querySchema,
+				responseBodySchema: responseSchema,
+			})
+
+			expect(responseBody).toEqual({
+				data: {
+					code: 99,
+				},
+			})
 		})
 	})
 

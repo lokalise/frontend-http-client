@@ -1,30 +1,30 @@
 import { stringify } from 'fast-querystring'
-import { type ZodSchema, type ZodError } from 'zod'
+import type { z } from 'zod'
 
 import { type Either, failure, success, isFailure } from './either.js'
 import type {
 	CommonRequestParams,
-	NoQueryParams,
+	FreeQueryParams,
 	QueryParams,
 	ResourceChangeParams,
 	WretchInstance,
 } from './types.js'
 
-function parseRequestBody<RequestBody>({
+function parseRequestBody<RequestBodySchema extends z.Schema>({
 	body,
 	requestBodySchema,
 	path,
 }: {
-	body: RequestBody
-	requestBodySchema?: ZodSchema<RequestBody>
+	body: unknown
+	requestBodySchema?: RequestBodySchema
 	path: string
-}): Either<ZodError, RequestBody> {
+}): Either<z.ZodError, z.input<RequestBodySchema>> {
 	if (!body) {
 		return success(body)
 	}
 
 	if (!requestBodySchema) {
-		return success(body as RequestBody)
+		return success(body)
 	}
 
 	const result = requestBodySchema.safeParse(body)
@@ -41,15 +41,15 @@ function parseRequestBody<RequestBody>({
 	return success(body)
 }
 
-function parseQueryParams<RequestQueryParams>({
+function parseQueryParams<RequestQuerySchema extends z.Schema>({
 	queryParams,
 	queryParamsSchema,
 	path,
 }: {
-	queryParams: RequestQueryParams
-	queryParamsSchema?: ZodSchema<RequestQueryParams>
+	queryParams: unknown
+	queryParamsSchema?: RequestQuerySchema
 	path: string
-}): Either<ZodError, string> {
+}): Either<z.ZodError, string> {
 	if (!queryParams) {
 		return success('')
 	}
@@ -78,9 +78,9 @@ function parseResponseBody<ResponseBody>({
 	path,
 }: {
 	response: ResponseBody
-	responseBodySchema?: ZodSchema<ResponseBody>
+	responseBodySchema?: z.ZodSchema<ResponseBody>
 	path: string
-}): Either<ZodError, ResponseBody> {
+}): Either<z.ZodError, ResponseBody> {
 	if (!responseBodySchema) {
 		return success(response)
 	}
@@ -103,12 +103,12 @@ function parseResponseBody<ResponseBody>({
 async function sendResourceChange<
 	T extends WretchInstance,
 	ResponseBody,
-	RequestBody extends object | undefined = undefined,
-	RequestQueryParams extends object | undefined = undefined,
+	RequestBodySchema extends z.Schema | undefined = undefined,
+	RequestQuerySchema extends z.Schema | undefined = undefined,
 >(
 	wretch: T,
 	method: 'post' | 'put' | 'patch',
-	params: ResourceChangeParams<RequestBody, ResponseBody, RequestQueryParams>,
+	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
 ) {
 	const body = parseRequestBody({
 		body: params.body,
@@ -158,12 +158,12 @@ async function sendResourceChange<
 export async function sendGet<
 	T extends WretchInstance,
 	ResponseBody,
-	RequestQueryParams extends object | undefined = undefined,
+	RequestQuerySchema extends z.Schema | undefined = undefined,
 >(
 	wretch: T,
-	params: RequestQueryParams extends undefined
-		? NoQueryParams<ResponseBody>
-		: QueryParams<RequestQueryParams, ResponseBody>,
+	params: RequestQuerySchema extends z.Schema
+		? QueryParams<RequestQuerySchema, ResponseBody>
+		: FreeQueryParams<ResponseBody>,
 ): Promise<ResponseBody> {
 	const queryParams = parseQueryParams({
 		queryParams: params.queryParams,
@@ -198,9 +198,9 @@ export async function sendGet<
 export function sendPost<
 	T extends WretchInstance,
 	ResponseBody,
-	RequestBody extends object | undefined = undefined,
-	RequestQueryParams extends object | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBody, ResponseBody, RequestQueryParams>) {
+	RequestBodySchema extends z.Schema | undefined = undefined,
+	RequestQuerySchema extends z.Schema | undefined = undefined,
+>(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>) {
 	return sendResourceChange(wretch, 'post', params)
 }
 
@@ -209,9 +209,9 @@ export function sendPost<
 export function sendPut<
 	T extends WretchInstance,
 	ResponseBody,
-	RequestBody extends object | undefined = undefined,
-	RequestQueryParams extends object | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBody, ResponseBody, RequestQueryParams>) {
+	RequestBodySchema extends z.Schema | undefined = undefined,
+	RequestQuerySchema extends z.Schema | undefined = undefined,
+>(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>) {
 	return sendResourceChange(wretch, 'put', params)
 }
 
@@ -220,9 +220,9 @@ export function sendPut<
 export function sendPatch<
 	T extends WretchInstance,
 	ResponseBody,
-	RequestBody extends object | undefined = undefined,
-	RequestQueryParams extends object | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBody, ResponseBody, RequestQueryParams>) {
+	RequestBodySchema extends z.Schema | undefined = undefined,
+	RequestQuerySchema extends z.Schema | undefined = undefined,
+>(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>) {
 	return sendResourceChange(wretch, 'patch', params)
 }
 
