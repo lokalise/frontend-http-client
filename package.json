@@ -65,7 +65,7 @@
 		"mockttp": "^3.10.1",
 		"prettier": "^3.2.5",
 		"rimraf": "^5.0.5",
-		"tsup": "8.0.1",
+		"tsup": "8.0.2",
 		"typescript": "~5.3.3",
 		"vitest": "^1.2.2"
 	},
