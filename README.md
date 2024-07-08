@@ -60,6 +60,7 @@ const response = await sendGet(client, {
 	isNonJSONResponseExpected: true,
 })
 ```
+
 if non-JSON responses are expected, the library will return null, if not, it will throw an error.
 
 ## Credits

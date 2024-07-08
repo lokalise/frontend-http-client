@@ -805,7 +805,7 @@ describe('frontend-http-client', () => {
 					path: '/',
 				}),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
-				`"Request to / has returned an unexpected empty response."`,
+				`[Error: Request to / has returned an unexpected empty response.]`,
 			)
 		})
 
@@ -831,7 +831,7 @@ describe('frontend-http-client', () => {
 					path: '/',
 				}),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
-				`"Request to / has returned an unexpected non-JSON response."`,
+				`[Error: Request to / has returned an unexpected non-JSON response.]`,
 			)
 		})
 

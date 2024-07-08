@@ -1,5 +1,6 @@
 import { stringify } from 'fast-querystring'
-import type {WretchResponse} from "wretch";
+import type { WretchResponse } from 'wretch'
+import factory from 'wretch'
 import type { z } from 'zod'
 
 import type {
@@ -11,6 +12,8 @@ import type {
 } from './types.js'
 import { tryToResolveJsonBody } from './utils/bodyUtils.js'
 import { type Either, failure, success, isFailure } from './utils/either.js'
+
+import WretchError = factory.WretchError
 
 function parseRequestBody<RequestBodySchema extends z.Schema>({
 	body,
@@ -83,7 +86,7 @@ async function sendResourceChange<
 	wretch: T,
 	method: 'post' | 'put' | 'patch',
 	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
-): Promise<ResponseBody | null>  {
+): Promise<ResponseBody | null> {
 	const body = parseRequestBody({
 		body: params.body,
 		requestBodySchema: params.requestBodySchema,
@@ -115,7 +118,9 @@ async function sendResourceChange<
 			if (bodyParseResult.error === 'NOT_JSON') {
 				if (params.isNonJSONResponseExpected === false) {
 					return Promise.reject(
-						new Error(`Request to ${params.path} has returned an unexpected non-JSON response.`),
+						new WretchError(
+							`Request to ${params.path} has returned an unexpected non-JSON response.`,
+						),
 					)
 				}
 				return response as unknown as Promise<ResponseBody>
@@ -124,8 +129,8 @@ async function sendResourceChange<
 			if (bodyParseResult.error === 'EMPTY_RESPONSE') {
 				if (params.isEmptyResponseExpected === false) {
 					return Promise.reject(
-						new Error(`Request to ${params.path} has returned an unexpected empty response.`,
-					))
+						new WretchError(`Request to ${params.path} has returned an unexpected empty response.`),
+					)
 				}
 
 				return null
@@ -176,7 +181,7 @@ export async function sendGet<
 				return response as unknown as Promise<ResponseBody>
 			}
 			return Promise.reject(
-				`Request to ${params.path} has returned an unexpected non-JSON response.`,
+				new WretchError(`Request to ${params.path} has returned an unexpected non-JSON response.`),
 			)
 		}
 
@@ -184,7 +189,9 @@ export async function sendGet<
 			if (params.isEmptyResponseExpected) {
 				return null
 			}
-			return Promise.reject(`Request to ${params.path} has returned an unexpected empty response.`)
+			return Promise.reject(
+				new WretchError(`Request to ${params.path} has returned an unexpected empty response.`),
+			)
 		}
 
 		if (bodyParseResult.error) {
@@ -202,7 +209,10 @@ export function sendPost<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>): Promise<ResponseBody | null>  {
+>(
+	wretch: T,
+	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
+): Promise<ResponseBody | null> {
 	return sendResourceChange(wretch, 'post', params)
 }
 
@@ -213,7 +223,10 @@ export function sendPut<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>): Promise<ResponseBody | null>  {
+>(
+	wretch: T,
+	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
+): Promise<ResponseBody | null> {
 	return sendResourceChange(wretch, 'put', params)
 }
 
@@ -224,7 +237,10 @@ export function sendPatch<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>): Promise<ResponseBody | null>  {
+>(
+	wretch: T,
+	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
+): Promise<ResponseBody | null> {
 	return sendResourceChange(wretch, 'patch', params)
 }
 
