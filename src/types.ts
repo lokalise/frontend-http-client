@@ -3,10 +3,14 @@ import type { ZodSchema, z } from 'zod'
 
 type FreeformRecord = Record<string, unknown>
 
-export type CommonRequestParams<ResponseBody, IsNonJSONResponseExpected extends boolean> = {
+export type CommonRequestParams<
+	ResponseBody,
+	IsNonJSONResponseExpected extends boolean,
+	IsEmptyResponseExpected extends boolean,
+> = {
 	path: string
 	responseBodySchema: ZodSchema<ResponseBody>
-	isEmptyResponseExpected?: boolean // 204 is considered a success. Default is "false" for GET operations and "true" for everything else
+	isEmptyResponseExpected?: IsEmptyResponseExpected // 204 is considered a success. Default is "false" for GET operations and "true" for everything else
 	isNonJSONResponseExpected?: IsNonJSONResponseExpected // Do not throw an error if not receiving 'application/json' content-type.  Default is "false" for GET operations and "true" for everything else
 }
 
@@ -14,64 +18,98 @@ export type BodyRequestParams<
 	RequestBodySchema extends z.ZodSchema,
 	ResponseBody,
 	IsNonJSONResponseExpected extends boolean,
+	IsEmptyResponseExpected extends boolean,
 > = {
 	body: z.input<RequestBodySchema> | undefined
 	requestBodySchema: RequestBodySchema | undefined
-} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected>
+} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
 
-export type FreeBodyRequestParams<ResponseBody, IsNonJSONResponseExpected extends boolean> = {
+export type FreeBodyRequestParams<
+	ResponseBody,
+	IsNonJSONResponseExpected extends boolean,
+	IsEmptyResponseExpected extends boolean,
+> = {
 	body?: FreeformRecord
 	requestBodySchema?: never
-} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected>
+} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
 
 export type QueryParams<
 	RequestQuerySchema extends z.ZodSchema,
 	ResponseBody,
 	IsNonJSONResponseExpected extends boolean,
+	IsEmptyResponseExpected extends boolean,
 > = {
 	queryParams: z.input<RequestQuerySchema> | undefined
 	queryParamsSchema: RequestQuerySchema | undefined
-} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected>
+} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
 
-export type FreeQueryParams<ResponseBody, IsNonJSONResponseExpected extends boolean> = {
+export type FreeQueryParams<
+	ResponseBody,
+	IsNonJSONResponseExpected extends boolean,
+	IsEmptyResponseExpected extends boolean,
+> = {
 	queryParams?: FreeformRecord
 	queryParamsSchema?: never
-} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected>
+} & CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
 
 export type DeleteParams<
 	RequestQuerySchema extends z.ZodSchema,
 	ResponseBody,
 	IsNonJSONResponseExpected extends boolean,
+	IsEmptyResponseExpected extends boolean,
 > = {
 	queryParams: z.input<RequestQuerySchema> | undefined
 	queryParamsSchema: RequestQuerySchema | undefined
-} & Omit<CommonRequestParams<ResponseBody, IsNonJSONResponseExpected>, 'responseBodySchema'> & {
+} & Omit<
+	CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>,
+	'responseBodySchema'
+> & {
 		responseBodySchema?: ZodSchema<ResponseBody>
 	}
 
-export type FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected extends boolean> = {
+export type FreeDeleteParams<
+	ResponseBody,
+	IsNonJSONResponseExpected extends boolean,
+	IsEmptyResponseExpected extends boolean,
+> = {
 	queryParams?: FreeformRecord
 	queryParamsSchema?: never
-} & Omit<CommonRequestParams<ResponseBody, IsNonJSONResponseExpected>, 'responseBodySchema'> & {
+} & Omit<
+	CommonRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>,
+	'responseBodySchema'
+> & {
 		responseBodySchema?: ZodSchema<ResponseBody>
 	}
 
 export type RequestResultType<
 	ResponseBody,
-	isNonJSONResponseExpected extends boolean | undefined,
-> = isNonJSONResponseExpected extends true ? WretchResponse | null : ResponseBody | null
+	isNonJSONResponseExpected extends boolean,
+	isEmptyResponseExpected extends boolean,
+> = isEmptyResponseExpected extends true
+	? isNonJSONResponseExpected extends true
+		? WretchResponse | null
+		: ResponseBody | null
+	: isNonJSONResponseExpected extends true
+		? WretchResponse
+		: ResponseBody
 
 export type ResourceChangeParams<
 	RequestBody,
 	ResponseBody,
+	IsNonJSONResponseExpected extends boolean,
+	IsEmptyResponseExpected extends boolean,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
-	IsNonJSONResponseExpected extends boolean = false,
 > = (RequestBody extends z.Schema
-	? BodyRequestParams<RequestBody, ResponseBody, IsNonJSONResponseExpected>
-	: FreeBodyRequestParams<ResponseBody, IsNonJSONResponseExpected>) &
+	? BodyRequestParams<RequestBody, ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+	: FreeBodyRequestParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>) &
 	(RequestQuerySchema extends z.Schema
-		? QueryParams<RequestQuerySchema, ResponseBody, IsNonJSONResponseExpected>
-		: FreeQueryParams<ResponseBody, IsNonJSONResponseExpected>)
+		? QueryParams<
+				RequestQuerySchema,
+				ResponseBody,
+				IsNonJSONResponseExpected,
+				IsEmptyResponseExpected
+			>
+		: FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>)
 
 // We don't know which addons Wretch will have, and we don't really care, hence any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

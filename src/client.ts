@@ -1,6 +1,3 @@
-import { stringify } from 'fast-querystring'
-import type { WretchResponse } from 'wretch'
-import { WretchError } from 'wretch/resolver'
 import { z } from 'zod'
 
 import type {
@@ -12,89 +9,31 @@ import type {
 	ResourceChangeParams,
 	WretchInstance,
 } from './types.js'
-import { tryToResolveJsonBody } from './utils/bodyUtils.js'
-import { type Either, failure, success, isFailure } from './utils/either.js'
+import { parseRequestBody, tryToResolveJsonBody } from './utils/bodyUtils.js'
+import { isFailure } from './utils/either.js'
+import { buildWretchError } from './utils/errorUtils.js'
+import { parseQueryParams } from './utils/queryUtils.js'
 
-const UNKNOWN_SCHEMA = z.unknown()
-
-function parseRequestBody<RequestBodySchema extends z.Schema>({
-	body,
-	requestBodySchema,
-	path,
-}: {
-	body: unknown
-	requestBodySchema?: RequestBodySchema
-	path: string
-}): Either<z.ZodError, z.input<RequestBodySchema>> {
-	if (!body) {
-		return success(body)
-	}
-
-	if (!requestBodySchema) {
-		return success(body)
-	}
-
-	const result = requestBodySchema.safeParse(body)
-
-	if (!result.success) {
-		console.error({
-			path,
-			body,
-			error: result.error,
-		})
-		return failure(result.error)
-	}
-
-	return success(body)
-}
-
-function parseQueryParams<RequestQuerySchema extends z.Schema>({
-	queryParams,
-	queryParamsSchema,
-	path,
-}: {
-	queryParams: unknown
-	queryParamsSchema?: RequestQuerySchema
-	path: string
-}): Either<z.ZodError, string> {
-	if (!queryParams) {
-		return success('')
-	}
-
-	if (!queryParamsSchema) {
-		return success(`?${stringify(queryParams)}`)
-	}
-
-	const result = queryParamsSchema.safeParse(queryParams)
-
-	if (!result.success) {
-		console.error({
-			path,
-			queryParams,
-			error: result.error,
-		})
-		return failure(result.error)
-	}
-
-	return success(`?${stringify(queryParams)}`)
-}
+export const UNKNOWN_SCHEMA = z.unknown()
 
 async function sendResourceChange<
 	T extends WretchInstance,
 	ResponseBody,
+	IsNonJSONResponseExpected extends boolean,
+	IsEmptyResponseExpected extends boolean,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
-	IsNonJSONResponseExpected extends boolean = false,
 >(
 	wretch: T,
 	method: 'post' | 'put' | 'patch',
 	params: ResourceChangeParams<
 		RequestBodySchema,
 		ResponseBody,
-		RequestQuerySchema,
-		IsNonJSONResponseExpected
+		IsNonJSONResponseExpected,
+		IsEmptyResponseExpected,
+		RequestQuerySchema
 	>,
-): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
 	const body = parseRequestBody({
 		body: params.body,
 		requestBodySchema: params.requestBodySchema,
@@ -154,16 +93,7 @@ async function sendResourceChange<
 
 			return bodyParseResult.result
 		},
-	) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>>
-}
-
-function buildWretchError(message: string, response: WretchResponse): WretchError {
-	const error = new WretchError(message)
-	error.response = response
-	error.status = response.status
-	error.url = response.url
-
-	return error
+	) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>>
 }
 
 /* METHODS */
@@ -175,12 +105,18 @@ export async function sendGet<
 	ResponseBody,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
 	IsNonJSONResponseExpected extends boolean = false,
+	IsEmptyResponseExpected extends boolean = false,
 >(
 	wretch: T,
 	params: RequestQuerySchema extends z.Schema
-		? QueryParams<RequestQuerySchema, ResponseBody, IsNonJSONResponseExpected>
-		: FreeQueryParams<ResponseBody, IsNonJSONResponseExpected>,
-): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
+		? QueryParams<
+				RequestQuerySchema,
+				ResponseBody,
+				IsNonJSONResponseExpected,
+				IsEmptyResponseExpected
+			>
+		: FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
 	const queryParams = parseQueryParams({
 		queryParams: params.queryParams,
 		queryParamsSchema: params.queryParamsSchema,
@@ -227,7 +163,7 @@ export async function sendGet<
 		}
 
 		return bodyParseResult.result
-	}) as RequestResultType<ResponseBody, IsNonJSONResponseExpected>
+	}) as RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
 }
 
 /* POST */
@@ -238,15 +174,17 @@ export function sendPost<
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
 	IsNonJSONResponseExpected extends boolean = false,
+	IsEmptyResponseExpected extends boolean = false,
 >(
 	wretch: T,
 	params: ResourceChangeParams<
 		RequestBodySchema,
 		ResponseBody,
-		RequestQuerySchema,
-		IsNonJSONResponseExpected
+		IsNonJSONResponseExpected,
+		IsEmptyResponseExpected,
+		RequestQuerySchema
 	>,
-): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
 	return sendResourceChange(wretch, 'post', params)
 }
 
@@ -258,15 +196,17 @@ export function sendPut<
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
 	IsNonJSONResponseExpected extends boolean = false,
+	IsEmptyResponseExpected extends boolean = false,
 >(
 	wretch: T,
 	params: ResourceChangeParams<
 		RequestBodySchema,
 		ResponseBody,
-		RequestQuerySchema,
-		IsNonJSONResponseExpected
+		IsNonJSONResponseExpected,
+		IsEmptyResponseExpected,
+		RequestQuerySchema
 	>,
-): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
 	return sendResourceChange(wretch, 'put', params)
 }
 
@@ -278,15 +218,17 @@ export function sendPatch<
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
 	IsNonJSONResponseExpected extends boolean = false,
+	IsEmptyResponseExpected extends boolean = false,
 >(
 	wretch: T,
 	params: ResourceChangeParams<
 		RequestBodySchema,
 		ResponseBody,
-		RequestQuerySchema,
-		IsNonJSONResponseExpected
+		IsNonJSONResponseExpected,
+		IsEmptyResponseExpected,
+		RequestQuerySchema
 	>,
-): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
 	return sendResourceChange(wretch, 'patch', params)
 }
 
@@ -297,12 +239,18 @@ export function sendDelete<
 	ResponseBody,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
 	IsNonJSONResponseExpected extends boolean = false,
+	IsEmptyResponseExpected extends boolean = true,
 >(
 	wretch: T,
 	params: RequestQuerySchema extends z.Schema
-		? DeleteParams<RequestQuerySchema, ResponseBody, IsNonJSONResponseExpected>
-		: FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected>,
-): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
+		? DeleteParams<
+				RequestQuerySchema,
+				ResponseBody,
+				IsNonJSONResponseExpected,
+				IsEmptyResponseExpected
+			>
+		: FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
 	const queryParams = parseQueryParams({
 		queryParams: params.queryParams,
 		queryParamsSchema: params.queryParamsSchema,
@@ -351,5 +299,5 @@ export function sendDelete<
 		}
 
 		return bodyParseResult.result
-	}) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>>
+	}) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>>
 }
