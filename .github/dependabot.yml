@@ -16,13 +16,6 @@ updates:
     labels:
       - 'skip-release'
     groups:
-      lint:
-        patterns:
-          - '@typescript-eslint/*'
-          - 'eslint'
-          - 'eslint-*'
-          - 'prettier'
-          - 'jest-fail-on-console'
       testing:
         patterns:
           - 'vitest'
