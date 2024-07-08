@@ -1,6 +1,6 @@
 import { stringify } from 'fast-querystring'
 import type { WretchResponse } from 'wretch'
-import {WretchError} from "wretch/resolver";
+import { WretchError } from 'wretch/resolver'
 import type { z } from 'zod'
 
 import type {
@@ -117,7 +117,8 @@ async function sendResourceChange<
 				if (params.isNonJSONResponseExpected === false) {
 					return Promise.reject(
 						buildWretchError(
-							`Request to ${params.path} has returned an unexpected non-JSON response.`, response
+							`Request to ${params.path} has returned an unexpected non-JSON response.`,
+							response,
 						),
 					)
 				}
@@ -127,7 +128,10 @@ async function sendResourceChange<
 			if (bodyParseResult.error === 'EMPTY_RESPONSE') {
 				if (params.isEmptyResponseExpected === false) {
 					return Promise.reject(
-						buildWretchError(`Request to ${params.path} has returned an unexpected empty response.`, response),
+						buildWretchError(
+							`Request to ${params.path} has returned an unexpected empty response.`,
+							response,
+						),
 					)
 				}
 
@@ -188,7 +192,10 @@ export async function sendGet<
 				return response as unknown as Promise<ResponseBody>
 			}
 			return Promise.reject(
-				buildWretchError(`Request to ${params.path} has returned an unexpected non-JSON response.`, response),
+				buildWretchError(
+					`Request to ${params.path} has returned an unexpected non-JSON response.`,
+					response,
+				),
 			)
 		}
 
@@ -197,7 +204,10 @@ export async function sendGet<
 				return null
 			}
 			return Promise.reject(
-				buildWretchError(`Request to ${params.path} has returned an unexpected empty response.`, response),
+				buildWretchError(
+					`Request to ${params.path} has returned an unexpected empty response.`,
+					response,
+				),
 			)
 		}
 
