@@ -26,7 +26,7 @@ export function tryToResolveJsonBody<
 		})
 	}
 
-	return response.json().then((responseBody) => {
+	return response.json().then((responseBody: object) => {
 		return parseResponseBody({
 			response: responseBody,
 			responseBodySchema: schema,
