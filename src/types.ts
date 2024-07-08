@@ -6,6 +6,8 @@ type FreeformRecord = Record<string, unknown>
 export type CommonRequestParams<ResponseBody> = {
 	path: string
 	responseBodySchema?: ZodSchema<ResponseBody>
+	isEmptyResponseExpected?: boolean // 204 is considered a success. Default is "false" for GET operations and "true" for everything else
+	isNonJSONResponseExpected?: boolean // Do not throw an error if not receiving 'application/json' content-type.  Default is "false" for GET operations and "true" for everything else
 }
 
 export type BodyRequestParams<RequestBodySchema extends z.ZodSchema, ResponseBody> = {

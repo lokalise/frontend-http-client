@@ -1,7 +1,6 @@
 import { stringify } from 'fast-querystring'
 import type { z } from 'zod'
 
-import { type Either, failure, success, isFailure } from './either.js'
 import type {
 	CommonRequestParams,
 	FreeQueryParams,
@@ -9,6 +8,8 @@ import type {
 	ResourceChangeParams,
 	WretchInstance,
 } from './types.js'
+import { tryToResolveJsonBody } from './utils/bodyUtils.js'
+import { type Either, failure, success, isFailure } from './utils/either.js'
 
 function parseRequestBody<RequestBodySchema extends z.Schema>({
 	body,
@@ -72,34 +73,6 @@ function parseQueryParams<RequestQuerySchema extends z.Schema>({
 	return success(`?${stringify(queryParams)}`)
 }
 
-function parseResponseBody<ResponseBody>({
-	response,
-	responseBodySchema,
-	path,
-}: {
-	response: ResponseBody
-	responseBodySchema?: z.ZodSchema<ResponseBody>
-	path: string
-}): Either<z.ZodError, ResponseBody> {
-	if (!responseBodySchema) {
-		return success(response)
-	}
-
-	const result = responseBodySchema.safeParse(response)
-
-	if (!result.success) {
-		console.error({
-			path,
-			response,
-			error: result.error,
-		})
-
-		return failure(result.error)
-	}
-
-	return success(response)
-}
-
 async function sendResourceChange<
 	T extends WretchInstance,
 	ResponseBody,
@@ -132,21 +105,32 @@ async function sendResourceChange<
 
 	return wretch[method](body.result, `${params.path}${queryParams.result}`).res(
 		async (response) => {
-			if (response.headers.get('content-type')?.includes('application/json')) {
-				const parsedResponse = parseResponseBody({
-					response: (await response.json()) as ResponseBody,
-					responseBodySchema: params.responseBodySchema,
-					path: params.path,
-				})
-
-				if (isFailure(parsedResponse)) {
-					return Promise.reject(parsedResponse.error)
+			if (response.status === 204) {
+				if (params.isEmptyResponseExpected === false) {
+					return Promise.reject(new Error(`Request to ${params.path} has returned an unexpected empty response.`))
 				}
-
-				return parsedResponse.result
+				// It is generally OK for resource change operation to return empty response
+				return response
 			}
 
-			return response as unknown as Promise<ResponseBody>
+			const bodyParseResult = await tryToResolveJsonBody(
+				response,
+				params.path,
+				params.responseBodySchema,
+			)
+
+			if (bodyParseResult.error === 'NOT_JSON') {
+				if (params.isNonJSONResponseExpected === false) {
+					return Promise.reject(new Error(`Request to ${params.path} has returned an unexpected non-JSON response.`))
+				}
+					return response as unknown as Promise<ResponseBody>
+			}
+
+			if (bodyParseResult.error) {
+				return Promise.reject(bodyParseResult.error)
+			}
+
+			return bodyParseResult.result
 		},
 	)
 }
@@ -175,22 +159,37 @@ export async function sendGet<
 		return Promise.reject(queryParams.error)
 	}
 
-	return wretch
-		.get(`${params.path}${queryParams.result}`)
-		.json()
-		.then((response) => {
-			const parsedResponse = parseResponseBody({
-				response: response as ResponseBody,
-				responseBodySchema: params.responseBodySchema,
-				path: params.path,
-			})
+	return wretch.get(`${params.path}${queryParams.result}`).res(async (response) => {
+		const bodyParseResult = await tryToResolveJsonBody(
+			response,
+			params.path,
+			params.responseBodySchema,
+		)
 
-			if (isFailure(parsedResponse)) {
-				return Promise.reject(parsedResponse.error)
+		if (bodyParseResult.error === 'NOT_JSON') {
+			if (params.isNonJSONResponseExpected) {
+				return response as unknown as Promise<ResponseBody>
 			}
+			return Promise.reject(
+				`Request to ${params.path} has returned an unexpected non-JSON response.`,
+			)
+		}
 
-			return parsedResponse.result
-		})
+		if (bodyParseResult.error === 'EMPTY_RESPONSE') {
+			if (params.isEmptyResponseExpected) {
+				return response as unknown as Promise<ResponseBody>
+			}
+			return Promise.reject(
+				`Request to ${params.path} has returned an unexpected empty response.`,
+			)
+		}
+
+		if (bodyParseResult.error) {
+			return Promise.reject(bodyParseResult.error)
+		}
+
+		return bodyParseResult.result
+	})
 }
 
 /* POST */
