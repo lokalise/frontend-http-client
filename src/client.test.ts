@@ -50,11 +50,21 @@ describe('frontend-http-client', () => {
 			const responseBody = await sendPost(client, {
 				path: '/',
 			})
-
 			expect(responseBody).containSubset({
 				status: 204,
 				statusText: 'No Content',
 			})
+		})
+
+		it('returns unexpected no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPost('/').thenReply(204)
+
+			await expect(sendPost(client, {
+				path: '/',
+				isEmptyResponseExpected: false
+			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected empty response.]`)
 		})
 
 		it('throws an error if response does not pass validation', async () => {
@@ -299,14 +309,25 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPut('/').thenReply(204)
 
+
 			const responseBody = await sendPut(client, {
 				path: '/',
 			})
-
 			expect(responseBody).containSubset({
 				status: 204,
 				statusText: 'No Content',
 			})
+		})
+
+		it('returns unexpected no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPut('/').thenReply(204)
+
+			await expect(sendPut(client, {
+				path: '/',
+				isEmptyResponseExpected: false
+			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected empty response.]`)
 		})
 
 		it('throws an error if response does not pass validation', async () => {
@@ -482,6 +503,32 @@ describe('frontend-http-client', () => {
 					code: 99,
 				},
 			})
+		})
+
+		it('returns no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPatch('/').thenReply(204)
+
+
+			const responseBody = await sendPatch(client, {
+				path: '/',
+			})
+			expect(responseBody).containSubset({
+				status: 204,
+				statusText: 'No Content',
+			})
+		})
+
+		it('returns unexpected no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPatch('/').thenReply(204)
+
+			await expect(sendPatch(client, {
+				path: '/',
+				isEmptyResponseExpected: false
+			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected empty response.]`)
 		})
 
 		it('throws an error if response does not pass validation', async () => {
