@@ -47,7 +47,9 @@ const response = await sendGet(client, {
 })
 ```
 
-### Non json response handling
+if `204` responses are expected, the library will return the entire response object, if not, it will throw an error.
+
+### Non-JSON response handling
 
 SDK methods has a parameter (`isNonJSONResponseExpected`) to specify if non json responses should be treated as an error
 or not. By default it is treated as valid except on `sendGet` method where it is treated as an error. Usage example:
@@ -58,6 +60,7 @@ const response = await sendGet(client, {
 	isNonJSONResponseExpected: true,
 })
 ```
+if non-JSON responses are expected, the library will return the entire response object, if not, it will throw an error.
 
 ## Credits
 
