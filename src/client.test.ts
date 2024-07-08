@@ -817,14 +817,20 @@ describe('frontend-http-client', () => {
 
 			const response = await sendGet(client, {
 				path: '/',
-				responseBodySchema: z.null(),
+				responseBodySchema: z.object({
+					id: z.string(),
+				}),
 				isEmptyResponseExpected: true,
 			})
 
-			// This is for checking TS types, we are checking if it infers that the type is not WretchResponse correctly
 			if (response) {
-				// @ts-expect-error WretchResponse has this field, ResponseBody does not
+				// @ts-expect-error WretchResponse has this field, null does not
 				expect(response.ok).toBe(true)
+			}
+
+			// This is to test TS types: it should correctly infer that value is null or defined schema
+			if (response) {
+				expect(response.id).toBeDefined()
 			}
 
 			expect(response).toBe(null)
@@ -857,9 +863,7 @@ describe('frontend-http-client', () => {
 			})
 
 			// This is for checking TS types, we are checking if it infers the responseBody type as null | WretchResponse correctly
-			if (responseBody) {
-				expect(responseBody.ok).toBe(true)
-			}
+			expect(responseBody.ok).toBe(true)
 
 			expect(responseBody).containSubset({
 				status: 200,

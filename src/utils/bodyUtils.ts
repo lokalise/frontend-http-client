@@ -55,3 +55,34 @@ function parseResponseBody<ResponseBody>({
 
 	return success(response)
 }
+
+export function parseRequestBody<RequestBodySchema extends z.Schema>({
+	body,
+	requestBodySchema,
+	path,
+}: {
+	body: unknown
+	requestBodySchema?: RequestBodySchema
+	path: string
+}): Either<z.ZodError, z.input<RequestBodySchema>> {
+	if (!body) {
+		return success(body)
+	}
+
+	if (!requestBodySchema) {
+		return success(body)
+	}
+
+	const result = requestBodySchema.safeParse(body)
+
+	if (!result.success) {
+		console.error({
+			path,
+			body,
+			error: result.error,
+		})
+		return failure(result.error)
+	}
+
+	return success(body)
+}
