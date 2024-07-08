@@ -68,6 +68,31 @@ describe('frontend-http-client', () => {
 			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected empty response.]`)
 		})
 
+		it('returns not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPost('/').thenReply(200)
+
+			const responseBody = await sendPost(client, {
+				path: '/',
+			})
+			expect(responseBody).containSubset({
+				status: 200,
+				statusText: 'OK',
+			})
+		})
+
+		it('returns unexpected not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPost('/').thenReply(200)
+
+			await expect(sendPost(client, {
+				path: '/',
+				isNonJSONResponseExpected: false
+			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected non-JSON response.]`)
+		})
+
 		it('throws an error if response does not pass validation', async () => {
 			const client = wretch(mockServer.url)
 
@@ -331,6 +356,31 @@ describe('frontend-http-client', () => {
 			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected empty response.]`)
 		})
 
+		it('returns not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPut('/').thenReply(200)
+
+			const responseBody = await sendPut(client, {
+				path: '/',
+			})
+			expect(responseBody).containSubset({
+				status: 200,
+				statusText: 'OK',
+			})
+		})
+
+		it('returns unexpected not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPut('/').thenReply(200)
+
+			await expect(sendPut(client, {
+				path: '/',
+				isNonJSONResponseExpected: false
+			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected non-JSON response.]`)
+		})
+
 		it('throws an error if response does not pass validation', async () => {
 			const client = wretch(mockServer.url)
 
@@ -530,6 +580,31 @@ describe('frontend-http-client', () => {
 				path: '/',
 				isEmptyResponseExpected: false
 			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected empty response.]`)
+		})
+
+		it('returns not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPatch('/').thenReply(200)
+
+			const responseBody = await sendPatch(client, {
+				path: '/',
+			})
+			expect(responseBody).containSubset({
+				status: 200,
+				statusText: 'OK',
+			})
+		})
+
+		it('returns unexpected not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPatch('/').thenReply(200)
+
+			await expect(sendPatch(client, {
+				path: '/',
+				isNonJSONResponseExpected: false
+			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected non-JSON response.]`)
 		})
 
 		it('throws an error if response does not pass validation', async () => {
@@ -732,6 +807,31 @@ describe('frontend-http-client', () => {
 			})
 		})
 
+		it('returns not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forGet('/').thenReply(200)
+
+			await expect(sendGet(client, {
+				path: '/',
+			})).rejects.toThrowErrorMatchingInlineSnapshot(`"Request to / has returned an unexpected non-JSON response."`)
+		})
+
+		it('returns expected not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forGet('/').thenReply(200)
+
+			const responseBody = await sendGet(client, {
+				path: '/',
+				isNonJSONResponseExpected: true
+			})
+			expect(responseBody).containSubset({
+				status: 200,
+				statusText: 'OK',
+			})
+		})
+
 		it('throws an error if response does not pass validation', async () => {
 			const client = wretch(mockServer.url)
 
@@ -876,7 +976,7 @@ describe('frontend-http-client', () => {
 	})
 
 	describe('sendDelete', () => {
-		it('returns a status if proceeded', async () => {
+		it('returns no content response', async () => {
 			const client = wretch(mockServer.url)
 
 			await mockServer.forDelete('/').thenReply(204)
@@ -886,6 +986,20 @@ describe('frontend-http-client', () => {
 			})
 
 			expect(response).toMatchObject({ status: 204 })
+		})
+
+		it('returns not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forDelete('/').thenReply(200)
+
+			const responseBody = await sendDelete(client, {
+				path: '/',
+			})
+			expect(responseBody).containSubset({
+				status: 200,
+				statusText: 'OK',
+			})
 		})
 	})
 })
