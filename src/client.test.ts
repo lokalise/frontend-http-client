@@ -1008,10 +1008,86 @@ describe('frontend-http-client', () => {
 				path: '/',
 			})
 
-			expect(response).toMatchObject({ status: 204 })
+			expect(response).toBeNull()
 		})
 
-		it('returns not json response', async () => {
+		it('validates response if schema is provided', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forDelete('/').thenJson(200, { string: 1 })
+
+			await expect(
+				sendDelete(client, {
+					path: '/',
+					responseBodySchema: z.object({
+						string: z.string(),
+					}),
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(`
+				[ZodError: [
+				  {
+				    "code": "invalid_type",
+				    "expected": "string",
+				    "received": "number",
+				    "path": [
+				      "string"
+				    ],
+				    "message": "Expected string, received number"
+				  }
+				]]
+			`)
+		})
+
+		it('returns validated response if schema is provided and response is correct', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forDelete('/').thenJson(200, { string: '1' })
+
+			const response = await sendDelete(client, {
+				path: '/',
+				responseBodySchema: z.object({
+					string: z.string(),
+				}),
+			})
+
+			expect(response).toMatchInlineSnapshot(`
+				{
+				  "string": "1",
+				}
+			`)
+		})
+
+		it('supports query params', async () => {
+			const client = wretch(mockServer.url)
+			const testQueryParams = { param1: 'test', param2: 'test' }
+
+			await mockServer.forDelete().withQuery(testQueryParams).thenReply(204)
+
+			const response = await sendDelete(client, {
+				path: '/',
+				queryParams: testQueryParams,
+			})
+
+			expect(response).toBeNull()
+		})
+
+		it('throws if content is expected, but response is empty', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forDelete('/').thenReply(204)
+
+			await expect(
+				sendDelete(client, {
+					path: '/',
+					isEmptyResponseExpected: false,
+					responseBodySchema: z.any(),
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected empty response.]`,
+			)
+		})
+
+		it('returns non-JSON response', async () => {
 			const client = wretch(mockServer.url)
 
 			await mockServer.forDelete('/').thenReply(200)
@@ -1023,6 +1099,21 @@ describe('frontend-http-client', () => {
 				status: 200,
 				statusText: 'OK',
 			})
+		})
+
+		it('returns unexpected non-JSON response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forDelete('/').thenReply(200)
+
+			await expect(
+				sendDelete(client, {
+					path: '/',
+					isNonJSONResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected non-JSON response.]`,
+			)
 		})
 	})
 })

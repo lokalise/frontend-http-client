@@ -4,9 +4,11 @@ import { WretchError } from 'wretch/resolver'
 import type { z } from 'zod'
 
 import type {
-	CommonRequestParams,
+	DeleteParams,
+	FreeDeleteParams,
 	FreeQueryParams,
 	QueryParams,
+	RequestResultType,
 	ResourceChangeParams,
 	WretchInstance,
 } from './types.js'
@@ -80,11 +82,17 @@ async function sendResourceChange<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
+	IsNonJSONResponseExpected extends boolean = false,
 >(
 	wretch: T,
 	method: 'post' | 'put' | 'patch',
-	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
-): Promise<ResponseBody | null> {
+	params: ResourceChangeParams<
+		RequestBodySchema,
+		ResponseBody,
+		RequestQuerySchema,
+		IsNonJSONResponseExpected
+	>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	const body = parseRequestBody({
 		body: params.body,
 		requestBodySchema: params.requestBodySchema,
@@ -122,7 +130,7 @@ async function sendResourceChange<
 						),
 					)
 				}
-				return response as unknown as Promise<ResponseBody>
+				return response
 			}
 
 			if (bodyParseResult.error === 'EMPTY_RESPONSE') {
@@ -144,7 +152,7 @@ async function sendResourceChange<
 
 			return bodyParseResult.result
 		},
-	)
+	) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>>
 }
 
 function buildWretchError(message: string, response: WretchResponse): WretchError {
@@ -164,12 +172,13 @@ export async function sendGet<
 	T extends WretchInstance,
 	ResponseBody,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
+	IsNonJSONResponseExpected extends boolean = false,
 >(
 	wretch: T,
 	params: RequestQuerySchema extends z.Schema
-		? QueryParams<RequestQuerySchema, ResponseBody>
-		: FreeQueryParams<ResponseBody>,
-): Promise<ResponseBody | null> {
+		? QueryParams<RequestQuerySchema, ResponseBody, IsNonJSONResponseExpected>
+		: FreeQueryParams<ResponseBody, IsNonJSONResponseExpected>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	const queryParams = parseQueryParams({
 		queryParams: params.queryParams,
 		queryParamsSchema: params.queryParamsSchema,
@@ -189,7 +198,7 @@ export async function sendGet<
 
 		if (bodyParseResult.error === 'NOT_JSON') {
 			if (params.isNonJSONResponseExpected) {
-				return response as unknown as Promise<ResponseBody>
+				return response
 			}
 			return Promise.reject(
 				buildWretchError(
@@ -216,7 +225,7 @@ export async function sendGet<
 		}
 
 		return bodyParseResult.result
-	})
+	}) as RequestResultType<ResponseBody, IsNonJSONResponseExpected>
 }
 
 /* POST */
@@ -226,10 +235,16 @@ export function sendPost<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
+	IsNonJSONResponseExpected extends boolean = false,
 >(
 	wretch: T,
-	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
-): Promise<ResponseBody | null> {
+	params: ResourceChangeParams<
+		RequestBodySchema,
+		ResponseBody,
+		RequestQuerySchema,
+		IsNonJSONResponseExpected
+	>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	return sendResourceChange(wretch, 'post', params)
 }
 
@@ -240,10 +255,11 @@ export function sendPut<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
+	IsNonJSONResponseExpected extends boolean = false,
 >(
 	wretch: T,
 	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
-): Promise<ResponseBody | null> {
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	return sendResourceChange(wretch, 'put', params)
 }
 
@@ -254,18 +270,79 @@ export function sendPatch<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
+	IsNonJSONResponseExpected extends boolean = false,
 >(
 	wretch: T,
-	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
-): Promise<ResponseBody | null> {
+	params: ResourceChangeParams<
+		RequestBodySchema,
+		ResponseBody,
+		RequestQuerySchema,
+		IsNonJSONResponseExpected
+	>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	return sendResourceChange(wretch, 'patch', params)
 }
 
 /* DELETE */
 
-export function sendDelete<T extends WretchInstance, ResponseBody>(
+export function sendDelete<
+	T extends WretchInstance,
+	ResponseBody,
+	RequestQuerySchema extends z.Schema | undefined = undefined,
+	IsNonJSONResponseExpected extends boolean = false,
+>(
 	wretch: T,
-	params: Pick<CommonRequestParams<ResponseBody>, 'path'>,
-): Promise<WretchResponse> {
-	return wretch.delete(params.path).res()
+	params: RequestQuerySchema extends z.Schema
+		? DeleteParams<RequestQuerySchema, ResponseBody, IsNonJSONResponseExpected>
+		: FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
+	const queryParams = parseQueryParams({
+		queryParams: params.queryParams,
+		queryParamsSchema: params.queryParamsSchema,
+		path: params.path,
+	})
+
+	if (isFailure(queryParams)) {
+		return Promise.reject(queryParams.error)
+	}
+
+	return wretch.delete(`${params.path}${queryParams.result}`).res(async (response) => {
+		const bodyParseResult = await tryToResolveJsonBody(
+			response,
+			params.path,
+			params.responseBodySchema,
+		)
+
+		if (bodyParseResult.error === 'NOT_JSON') {
+			if (params.isNonJSONResponseExpected === false) {
+				return Promise.reject(
+					buildWretchError(
+						`Request to ${params.path} has returned an unexpected non-JSON response.`,
+						response,
+					),
+				)
+			}
+
+			return response
+		}
+
+		if (bodyParseResult.error === 'EMPTY_RESPONSE') {
+			if (params.isEmptyResponseExpected === false) {
+				return Promise.reject(
+					buildWretchError(
+						`Request to ${params.path} has returned an unexpected empty response.`,
+						response,
+					),
+				)
+			}
+
+			return null
+		}
+
+		if (bodyParseResult.error) {
+			return Promise.reject(bodyParseResult.error)
+		}
+
+		return bodyParseResult.result
+	}) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>>
 }
