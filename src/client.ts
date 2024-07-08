@@ -1,4 +1,5 @@
 import { stringify } from 'fast-querystring'
+import type {WretchResponse} from "wretch";
 import type { z } from 'zod'
 
 import type {
@@ -82,7 +83,7 @@ async function sendResourceChange<
 	wretch: T,
 	method: 'post' | 'put' | 'patch',
 	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
-) {
+): Promise<ResponseBody | null>  {
 	const body = parseRequestBody({
 		body: params.body,
 		requestBodySchema: params.requestBodySchema,
@@ -105,16 +106,6 @@ async function sendResourceChange<
 
 	return wretch[method](body.result, `${params.path}${queryParams.result}`).res(
 		async (response) => {
-			if (response.status === 204) {
-				if (params.isEmptyResponseExpected === false) {
-					return Promise.reject(
-						new Error(`Request to ${params.path} has returned an unexpected empty response.`),
-					)
-				}
-				// It is generally OK for resource change operation to return empty response
-				return response
-			}
-
 			const bodyParseResult = await tryToResolveJsonBody(
 				response,
 				params.path,
@@ -128,6 +119,16 @@ async function sendResourceChange<
 					)
 				}
 				return response as unknown as Promise<ResponseBody>
+			}
+
+			if (bodyParseResult.error === 'EMPTY_RESPONSE') {
+				if (params.isEmptyResponseExpected === false) {
+					return Promise.reject(
+						new Error(`Request to ${params.path} has returned an unexpected empty response.`,
+					))
+				}
+
+				return null
 			}
 
 			if (bodyParseResult.error) {
@@ -152,7 +153,7 @@ export async function sendGet<
 	params: RequestQuerySchema extends z.Schema
 		? QueryParams<RequestQuerySchema, ResponseBody>
 		: FreeQueryParams<ResponseBody>,
-): Promise<ResponseBody> {
+): Promise<ResponseBody | null> {
 	const queryParams = parseQueryParams({
 		queryParams: params.queryParams,
 		queryParamsSchema: params.queryParamsSchema,
@@ -181,7 +182,7 @@ export async function sendGet<
 
 		if (bodyParseResult.error === 'EMPTY_RESPONSE') {
 			if (params.isEmptyResponseExpected) {
-				return response as unknown as Promise<ResponseBody>
+				return null
 			}
 			return Promise.reject(`Request to ${params.path} has returned an unexpected empty response.`)
 		}
@@ -201,7 +202,7 @@ export function sendPost<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>) {
+>(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>): Promise<ResponseBody | null>  {
 	return sendResourceChange(wretch, 'post', params)
 }
 
@@ -212,7 +213,7 @@ export function sendPut<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>) {
+>(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>): Promise<ResponseBody | null>  {
 	return sendResourceChange(wretch, 'put', params)
 }
 
@@ -223,7 +224,7 @@ export function sendPatch<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>) {
+>(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>): Promise<ResponseBody | null>  {
 	return sendResourceChange(wretch, 'patch', params)
 }
 
@@ -232,6 +233,6 @@ export function sendPatch<
 export function sendDelete<T extends WretchInstance, ResponseBody>(
 	wretch: T,
 	params: Pick<CommonRequestParams<ResponseBody>, 'path'>,
-) {
+): Promise<WretchResponse> {
 	return wretch.delete(params.path).res()
 }

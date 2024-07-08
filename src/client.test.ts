@@ -51,10 +51,7 @@ describe('frontend-http-client', () => {
 			const responseBody = await sendPost(client, {
 				path: '/',
 			})
-			expect(responseBody).containSubset({
-				status: 204,
-				statusText: 'No Content',
-			})
+			expect(responseBody).toBe(null)
 		})
 
 		it('returns unexpected no content response', async () => {
@@ -346,10 +343,7 @@ describe('frontend-http-client', () => {
 			const responseBody = await sendPut(client, {
 				path: '/',
 			})
-			expect(responseBody).containSubset({
-				status: 204,
-				statusText: 'No Content',
-			})
+			expect(responseBody).toBe(null)
 		})
 
 		it('returns unexpected no content response', async () => {
@@ -579,10 +573,7 @@ describe('frontend-http-client', () => {
 			const responseBody = await sendPatch(client, {
 				path: '/',
 			})
-			expect(responseBody).containSubset({
-				status: 204,
-				statusText: 'No Content',
-			})
+			expect(responseBody).toBe(null)
 		})
 
 		it('returns unexpected no content response', async () => {
@@ -827,10 +818,7 @@ describe('frontend-http-client', () => {
 				path: '/',
 				isEmptyResponseExpected: true,
 			})
-			expect(response).containSubset({
-				status: 204,
-				statusText: 'No Content',
-			})
+			expect(response).toBe(null)
 		})
 
 		it('returns not json response', async () => {
@@ -856,6 +844,7 @@ describe('frontend-http-client', () => {
 				path: '/',
 				isNonJSONResponseExpected: true,
 			})
+
 			expect(responseBody).containSubset({
 				status: 200,
 				statusText: 'OK',
@@ -948,7 +937,7 @@ describe('frontend-http-client', () => {
 				responseBodySchema: responseSchema,
 			})
 
-			expect(response.data.code).toBe(99)
+			expect(response?.data.code).toBe(99)
 		})
 
 		it('should work without specifying an schema', async () => {
@@ -971,7 +960,7 @@ describe('frontend-http-client', () => {
 				responseBodySchema: responseSchema,
 			})
 
-			expect(response.data.code).toBe(99)
+			expect(response?.data.code).toBe(99)
 		})
 
 		it('should check types against schema input type', async () => {

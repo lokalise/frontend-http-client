@@ -47,7 +47,7 @@ const response = await sendGet(client, {
 })
 ```
 
-if `204` responses are expected, the library will return the entire response object, if not, it will throw an error.
+if `204` responses are expected, the library will return null, if not, it will throw an error.
 
 ### Non-JSON response handling
 
@@ -60,7 +60,7 @@ const response = await sendGet(client, {
 	isNonJSONResponseExpected: true,
 })
 ```
-if non-JSON responses are expected, the library will return the entire response object, if not, it will throw an error.
+if non-JSON responses are expected, the library will return null, if not, it will throw an error.
 
 ## Credits
 
