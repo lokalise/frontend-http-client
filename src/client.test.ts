@@ -817,13 +817,20 @@ describe('frontend-http-client', () => {
 
 			const response = await sendGet(client, {
 				path: '/',
-				responseBodySchema: z.any(),
+				responseBodySchema: z.null(),
 				isEmptyResponseExpected: true,
 			})
+
+			// This is for checking TS types, we are checking if it infers that the type is not WretchResponse correctly
+			if (response) {
+				// @ts-expect-error WretchResponse has this field, ResponseBody does not
+				expect(response.ok).toBe(true)
+			}
+
 			expect(response).toBe(null)
 		})
 
-		it('returns not json response', async () => {
+		it('returns non-JSON response', async () => {
 			const client = wretch(mockServer.url)
 
 			await mockServer.forGet('/').thenReply(200)
@@ -838,7 +845,7 @@ describe('frontend-http-client', () => {
 			)
 		})
 
-		it('returns expected not json response', async () => {
+		it('returns expected non-JSON response', async () => {
 			const client = wretch(mockServer.url)
 
 			await mockServer.forGet('/').thenReply(200)
@@ -848,6 +855,11 @@ describe('frontend-http-client', () => {
 				responseBodySchema: z.any(),
 				isNonJSONResponseExpected: true,
 			})
+
+			// This is for checking TS types, we are checking if it infers the responseBody type as null | WretchResponse correctly
+			if (responseBody) {
+				expect(responseBody.ok).toBe(true)
+			}
 
 			expect(responseBody).containSubset({
 				status: 200,
@@ -1069,6 +1081,30 @@ describe('frontend-http-client', () => {
 			})
 
 			expect(response).toBeNull()
+		})
+
+		it('validates query params', async () => {
+			const client = wretch(mockServer.url)
+			const testQueryParams = { param1: 'test', param2: 'test' }
+
+			await expect(
+				sendDelete(client, {
+					path: '/',
+					// @ts-expect-error Schema does not match the object
+					queryParams: testQueryParams,
+					queryParamsSchema: z.string(),
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(`
+				[ZodError: [
+				  {
+				    "code": "invalid_type",
+				    "expected": "string",
+				    "received": "object",
+				    "path": [],
+				    "message": "Expected string, received object"
+				  }
+				]]
+			`)
 		})
 
 		it('throws if content is expected, but response is empty', async () => {

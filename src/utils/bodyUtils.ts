@@ -1,18 +1,13 @@
 import type { WretchResponse } from 'wretch'
-import type { ZodError } from 'zod'
-import { z } from 'zod'
+import type { ZodError, z } from 'zod'
 
 import type { Either } from './either.js'
 import { failure, success } from './either.js'
 
-const ANY_PAYLOAD_SCHEMA = z.any()
-
-export function tryToResolveJsonBody<
-	RequestBodySchema extends z.ZodSchema = typeof ANY_PAYLOAD_SCHEMA,
->(
+export function tryToResolveJsonBody<RequestBodySchema extends z.ZodSchema>(
 	response: WretchResponse,
 	path: string,
-	schema: RequestBodySchema = ANY_PAYLOAD_SCHEMA as unknown as RequestBodySchema,
+	schema: RequestBodySchema,
 ): Promise<
 	Either<'NOT_JSON' | 'EMPTY_RESPONSE' | ZodError<RequestBodySchema>, z.output<RequestBodySchema>>
 > {
@@ -43,13 +38,9 @@ function parseResponseBody<ResponseBody>({
 	path,
 }: {
 	response: ResponseBody
-	responseBodySchema?: z.ZodSchema<ResponseBody>
+	responseBodySchema: z.ZodSchema<ResponseBody>
 	path: string
 }): Either<z.ZodError, ResponseBody> {
-	if (!responseBodySchema) {
-		return success(response)
-	}
-
 	const result = responseBodySchema.safeParse(response)
 
 	if (!result.success) {

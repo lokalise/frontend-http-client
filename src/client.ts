@@ -1,7 +1,7 @@
 import { stringify } from 'fast-querystring'
 import type { WretchResponse } from 'wretch'
 import { WretchError } from 'wretch/resolver'
-import type { z } from 'zod'
+import { z } from 'zod'
 
 import type {
 	DeleteParams,
@@ -14,6 +14,8 @@ import type {
 } from './types.js'
 import { tryToResolveJsonBody } from './utils/bodyUtils.js'
 import { type Either, failure, success, isFailure } from './utils/either.js'
+
+const UNKNOWN_SCHEMA = z.unknown()
 
 function parseRequestBody<RequestBodySchema extends z.Schema>({
 	body,
@@ -258,7 +260,12 @@ export function sendPut<
 	IsNonJSONResponseExpected extends boolean = false,
 >(
 	wretch: T,
-	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
+	params: ResourceChangeParams<
+		RequestBodySchema,
+		ResponseBody,
+		RequestQuerySchema,
+		IsNonJSONResponseExpected
+	>,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	return sendResourceChange(wretch, 'put', params)
 }
@@ -310,7 +317,7 @@ export function sendDelete<
 		const bodyParseResult = await tryToResolveJsonBody(
 			response,
 			params.path,
-			params.responseBodySchema,
+			params.responseBodySchema ?? UNKNOWN_SCHEMA,
 		)
 
 		if (bodyParseResult.error === 'NOT_JSON') {

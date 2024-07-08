@@ -59,9 +59,7 @@ export type FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected extends boo
 export type RequestResultType<
 	ResponseBody,
 	isNonJSONResponseExpected extends boolean | undefined,
-> = isNonJSONResponseExpected extends true
-	? ResponseBody | WretchResponse | null
-	: ResponseBody | null
+> = isNonJSONResponseExpected extends true ? WretchResponse | null : ResponseBody | null
 
 export type ResourceChangeParams<
 	RequestBody,
