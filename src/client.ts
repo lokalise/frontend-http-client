@@ -107,7 +107,9 @@ async function sendResourceChange<
 		async (response) => {
 			if (response.status === 204) {
 				if (params.isEmptyResponseExpected === false) {
-					return Promise.reject(new Error(`Request to ${params.path} has returned an unexpected empty response.`))
+					return Promise.reject(
+						new Error(`Request to ${params.path} has returned an unexpected empty response.`),
+					)
 				}
 				// It is generally OK for resource change operation to return empty response
 				return response
@@ -121,9 +123,11 @@ async function sendResourceChange<
 
 			if (bodyParseResult.error === 'NOT_JSON') {
 				if (params.isNonJSONResponseExpected === false) {
-					return Promise.reject(new Error(`Request to ${params.path} has returned an unexpected non-JSON response.`))
+					return Promise.reject(
+						new Error(`Request to ${params.path} has returned an unexpected non-JSON response.`),
+					)
 				}
-					return response as unknown as Promise<ResponseBody>
+				return response as unknown as Promise<ResponseBody>
 			}
 
 			if (bodyParseResult.error) {
@@ -179,9 +183,7 @@ export async function sendGet<
 			if (params.isEmptyResponseExpected) {
 				return response as unknown as Promise<ResponseBody>
 			}
-			return Promise.reject(
-				`Request to ${params.path} has returned an unexpected empty response.`,
-			)
+			return Promise.reject(`Request to ${params.path} has returned an unexpected empty response.`)
 		}
 
 		if (bodyParseResult.error) {

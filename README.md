@@ -36,24 +36,26 @@ const responseBody = await sendPost(client, {
 ```
 
 ### No content response handling (HTTP 204)
-SDK methods has a parameter (`isEmptyResponseExpected`) to specify if 204 response should be treated as an error or not. By default it is treated as 
+
+SDK methods has a parameter (`isEmptyResponseExpected`) to specify if 204 response should be treated as an error or not. By default it is treated as
 valid except on `sendGet` method where it is treated as an error. Usage example:
 
 ```ts
 const response = await sendGet(client, {
-    path: '/',
-    isEmptyResponseExpected: true,
+	path: '/',
+	isEmptyResponseExpected: true,
 })
 ```
 
 ### Non json response handling
+
 SDK methods has a parameter (`isNonJSONResponseExpected`) to specify if non json responses should be treated as an error
 or not. By default it is treated as valid except on `sendGet` method where it is treated as an error. Usage example:
 
 ```ts
 const response = await sendGet(client, {
-    path: '/',
-    isNonJSONResponseExpected: true,
+	path: '/',
+	isNonJSONResponseExpected: true,
 })
 ```
 

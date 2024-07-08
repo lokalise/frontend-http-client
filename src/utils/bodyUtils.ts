@@ -13,14 +13,16 @@ export function tryToResolveJsonBody<
 	response: WretchResponse,
 	path: string,
 	schema: RequestBodySchema = ANY_PAYLOAD_SCHEMA as unknown as RequestBodySchema,
-): Promise<Either<'NOT_JSON' | 'EMPTY_RESPONSE' | ZodError<RequestBodySchema>, z.output<RequestBodySchema>>> {
+): Promise<
+	Either<'NOT_JSON' | 'EMPTY_RESPONSE' | ZodError<RequestBodySchema>, z.output<RequestBodySchema>>
+> {
 	if (response.status === 204) {
-        return Promise.resolve({
-            error: "EMPTY_RESPONSE",
-        })
-    }
+		return Promise.resolve({
+			error: 'EMPTY_RESPONSE',
+		})
+	}
 
-    if (!response.headers.get('content-type')?.includes('application/json')) {
+	if (!response.headers.get('content-type')?.includes('application/json')) {
 		return Promise.resolve({
 			error: 'NOT_JSON',
 		})

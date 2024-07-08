@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 import failOnConsole from 'jest-fail-on-console'
 import { getLocal } from 'mockttp'
-import {expect} from "vitest";
+import { expect } from 'vitest'
 import wretch from 'wretch'
 import { z } from 'zod'
 
@@ -62,10 +62,14 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPost('/').thenReply(204)
 
-			await expect(sendPost(client, {
-				path: '/',
-				isEmptyResponseExpected: false
-			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected empty response.]`)
+			await expect(
+				sendPost(client, {
+					path: '/',
+					isEmptyResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected empty response.]`,
+			)
 		})
 
 		it('returns not json response', async () => {
@@ -87,10 +91,14 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPost('/').thenReply(200)
 
-			await expect(sendPost(client, {
-				path: '/',
-				isNonJSONResponseExpected: false
-			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected non-JSON response.]`)
+			await expect(
+				sendPost(client, {
+					path: '/',
+					isNonJSONResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected non-JSON response.]`,
+			)
 		})
 
 		it('throws an error if response does not pass validation', async () => {
@@ -335,7 +343,6 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPut('/').thenReply(204)
 
-
 			const responseBody = await sendPut(client, {
 				path: '/',
 			})
@@ -350,10 +357,14 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPut('/').thenReply(204)
 
-			await expect(sendPut(client, {
-				path: '/',
-				isEmptyResponseExpected: false
-			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected empty response.]`)
+			await expect(
+				sendPut(client, {
+					path: '/',
+					isEmptyResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected empty response.]`,
+			)
 		})
 
 		it('returns not json response', async () => {
@@ -375,10 +386,14 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPut('/').thenReply(200)
 
-			await expect(sendPut(client, {
-				path: '/',
-				isNonJSONResponseExpected: false
-			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected non-JSON response.]`)
+			await expect(
+				sendPut(client, {
+					path: '/',
+					isNonJSONResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected non-JSON response.]`,
+			)
 		})
 
 		it('throws an error if response does not pass validation', async () => {
@@ -561,7 +576,6 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPatch('/').thenReply(204)
 
-
 			const responseBody = await sendPatch(client, {
 				path: '/',
 			})
@@ -576,10 +590,14 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPatch('/').thenReply(204)
 
-			await expect(sendPatch(client, {
-				path: '/',
-				isEmptyResponseExpected: false
-			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected empty response.]`)
+			await expect(
+				sendPatch(client, {
+					path: '/',
+					isEmptyResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected empty response.]`,
+			)
 		})
 
 		it('returns not json response', async () => {
@@ -601,10 +619,14 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forPatch('/').thenReply(200)
 
-			await expect(sendPatch(client, {
-				path: '/',
-				isNonJSONResponseExpected: false
-			})).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Request to / has returned an unexpected non-JSON response.]`)
+			await expect(
+				sendPatch(client, {
+					path: '/',
+					isNonJSONResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected non-JSON response.]`,
+			)
 		})
 
 		it('throws an error if response does not pass validation', async () => {
@@ -787,9 +809,13 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forGet('/').thenReply(204)
 
-			await expect(sendGet(client, {
-				path: '/',
-			})).rejects.toThrowErrorMatchingInlineSnapshot(`"Request to / has returned an unexpected empty response."`)
+			await expect(
+				sendGet(client, {
+					path: '/',
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`"Request to / has returned an unexpected empty response."`,
+			)
 		})
 
 		it('returns expected no content response', async () => {
@@ -799,7 +825,7 @@ describe('frontend-http-client', () => {
 
 			const response = await sendGet(client, {
 				path: '/',
-				isEmptyResponseExpected: true
+				isEmptyResponseExpected: true,
 			})
 			expect(response).containSubset({
 				status: 204,
@@ -812,9 +838,13 @@ describe('frontend-http-client', () => {
 
 			await mockServer.forGet('/').thenReply(200)
 
-			await expect(sendGet(client, {
-				path: '/',
-			})).rejects.toThrowErrorMatchingInlineSnapshot(`"Request to / has returned an unexpected non-JSON response."`)
+			await expect(
+				sendGet(client, {
+					path: '/',
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`"Request to / has returned an unexpected non-JSON response."`,
+			)
 		})
 
 		it('returns expected not json response', async () => {
@@ -824,7 +854,7 @@ describe('frontend-http-client', () => {
 
 			const responseBody = await sendGet(client, {
 				path: '/',
-				isNonJSONResponseExpected: true
+				isNonJSONResponseExpected: true,
 			})
 			expect(responseBody).containSubset({
 				status: 200,
