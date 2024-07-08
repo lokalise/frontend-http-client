@@ -1,6 +1,7 @@
 /* eslint-disable max-lines */
 import failOnConsole from 'jest-fail-on-console'
 import { getLocal } from 'mockttp'
+import {expect} from "vitest";
 import wretch from 'wretch'
 import { z } from 'zod'
 
@@ -703,6 +704,31 @@ describe('frontend-http-client', () => {
 				data: {
 					code: 99,
 				},
+			})
+		})
+
+		it('returns no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forGet('/').thenReply(204)
+
+			await expect(sendGet(client, {
+				path: '/',
+			})).rejects.toThrowErrorMatchingInlineSnapshot(`"Request to / has returned an unexpected empty response."`)
+		})
+
+		it('returns expected no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forGet('/').thenReply(204)
+
+			const response = await sendGet(client, {
+				path: '/',
+				isEmptyResponseExpected: true
+			})
+			expect(response).containSubset({
+				status: 204,
+				statusText: 'No Content',
 			})
 		})
 
