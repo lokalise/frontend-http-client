@@ -50,6 +50,7 @@ describe('frontend-http-client', () => {
 
 			const responseBody = await sendPost(client, {
 				path: '/',
+				responseBodySchema: z.any(),
 			})
 			expect(responseBody).toBe(null)
 		})
@@ -63,6 +64,7 @@ describe('frontend-http-client', () => {
 				sendPost(client, {
 					path: '/',
 					isEmptyResponseExpected: false,
+					responseBodySchema: z.any(),
 				}),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
 				`[Error: Request to / has returned an unexpected empty response.]`,
@@ -76,6 +78,7 @@ describe('frontend-http-client', () => {
 
 			const responseBody = await sendPost(client, {
 				path: '/',
+				responseBodySchema: z.any(),
 			})
 			expect(responseBody).containSubset({
 				status: 200,
@@ -92,6 +95,7 @@ describe('frontend-http-client', () => {
 				sendPost(client, {
 					path: '/',
 					isNonJSONResponseExpected: false,
+					responseBodySchema: z.any(),
 				}),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
 				`[Error: Request to / has returned an unexpected non-JSON response.]`,
@@ -272,18 +276,6 @@ describe('frontend-http-client', () => {
 			expect(response).toEqual({ success: true })
 		})
 
-		it('allows posting request without responseBodySchema', async () => {
-			const client = wretch(mockServer.url)
-
-			await mockServer.forPost('/').thenJson(200, { success: true })
-
-			const response = await sendPost(client, {
-				path: '/',
-			})
-
-			expect(response).toEqual({ success: true })
-		})
-
 		it('should check types against schema input type', async () => {
 			const client = wretch(mockServer.url)
 			await mockServer.forPost('/').thenJson(200, { success: true })
@@ -342,6 +334,7 @@ describe('frontend-http-client', () => {
 
 			const responseBody = await sendPut(client, {
 				path: '/',
+				responseBodySchema: z.any(),
 			})
 			expect(responseBody).toBe(null)
 		})
@@ -354,6 +347,7 @@ describe('frontend-http-client', () => {
 			await expect(
 				sendPut(client, {
 					path: '/',
+					responseBodySchema: z.any(),
 					isEmptyResponseExpected: false,
 				}),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -368,6 +362,7 @@ describe('frontend-http-client', () => {
 
 			const responseBody = await sendPut(client, {
 				path: '/',
+				responseBodySchema: z.any(),
 			})
 			expect(responseBody).containSubset({
 				status: 200,
@@ -383,6 +378,7 @@ describe('frontend-http-client', () => {
 			await expect(
 				sendPut(client, {
 					path: '/',
+					responseBodySchema: z.any(),
 					isNonJSONResponseExpected: false,
 				}),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -572,6 +568,7 @@ describe('frontend-http-client', () => {
 
 			const responseBody = await sendPatch(client, {
 				path: '/',
+				responseBodySchema: z.any(),
 			})
 			expect(responseBody).toBe(null)
 		})
@@ -584,6 +581,7 @@ describe('frontend-http-client', () => {
 			await expect(
 				sendPatch(client, {
 					path: '/',
+					responseBodySchema: z.any(),
 					isEmptyResponseExpected: false,
 				}),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -598,6 +596,7 @@ describe('frontend-http-client', () => {
 
 			const responseBody = await sendPatch(client, {
 				path: '/',
+				responseBodySchema: z.any(),
 			})
 			expect(responseBody).containSubset({
 				status: 200,
@@ -613,6 +612,7 @@ describe('frontend-http-client', () => {
 			await expect(
 				sendPatch(client, {
 					path: '/',
+					responseBodySchema: z.any(),
 					isNonJSONResponseExpected: false,
 				}),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -803,6 +803,7 @@ describe('frontend-http-client', () => {
 			await expect(
 				sendGet(client, {
 					path: '/',
+					responseBodySchema: z.any(),
 				}),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
 				`[Error: Request to / has returned an unexpected empty response.]`,
@@ -816,6 +817,7 @@ describe('frontend-http-client', () => {
 
 			const response = await sendGet(client, {
 				path: '/',
+				responseBodySchema: z.any(),
 				isEmptyResponseExpected: true,
 			})
 			expect(response).toBe(null)
@@ -829,6 +831,7 @@ describe('frontend-http-client', () => {
 			await expect(
 				sendGet(client, {
 					path: '/',
+					responseBodySchema: z.any(),
 				}),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
 				`[Error: Request to / has returned an unexpected non-JSON response.]`,
@@ -842,6 +845,7 @@ describe('frontend-http-client', () => {
 
 			const responseBody = await sendGet(client, {
 				path: '/',
+				responseBodySchema: z.any(),
 				isNonJSONResponseExpected: true,
 			})
 
