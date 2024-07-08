@@ -163,7 +163,7 @@ export function sendGet<
     }
 
     return bodyParseResult.result
-  }) as RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+  }) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>>
 }
 
 /* POST */
