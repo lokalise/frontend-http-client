@@ -1,6 +1,7 @@
 /* eslint-disable max-lines */
 import failOnConsole from 'jest-fail-on-console'
 import { getLocal } from 'mockttp'
+import { expect } from 'vitest'
 import wretch from 'wretch'
 import { z } from 'zod'
 
@@ -49,12 +50,56 @@ describe('frontend-http-client', () => {
 
 			const responseBody = await sendPost(client, {
 				path: '/',
+				responseBodySchema: z.any(),
 			})
+			expect(responseBody).toBe(null)
+		})
 
-			expect(responseBody).containSubset({
-				status: 204,
-				statusText: 'No Content',
+		it('returns unexpected no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPost('/').thenReply(204)
+
+			await expect(
+				sendPost(client, {
+					path: '/',
+					isEmptyResponseExpected: false,
+					responseBodySchema: z.any(),
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected empty response.]`,
+			)
+		})
+
+		it('returns not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPost('/').thenReply(200)
+
+			const responseBody = await sendPost(client, {
+				path: '/',
+				responseBodySchema: z.any(),
 			})
+			expect(responseBody).containSubset({
+				status: 200,
+				statusText: 'OK',
+			})
+		})
+
+		it('returns unexpected not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPost('/').thenReply(200)
+
+			await expect(
+				sendPost(client, {
+					path: '/',
+					isNonJSONResponseExpected: false,
+					responseBodySchema: z.any(),
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected non-JSON response.]`,
+			)
 		})
 
 		it('throws an error if response does not pass validation', async () => {
@@ -231,18 +276,6 @@ describe('frontend-http-client', () => {
 			expect(response).toEqual({ success: true })
 		})
 
-		it('allows posting request without responseBodySchema', async () => {
-			const client = wretch(mockServer.url)
-
-			await mockServer.forPost('/').thenJson(200, { success: true })
-
-			const response = await sendPost(client, {
-				path: '/',
-			})
-
-			expect(response).toEqual({ success: true })
-		})
-
 		it('should check types against schema input type', async () => {
 			const client = wretch(mockServer.url)
 			await mockServer.forPost('/').thenJson(200, { success: true })
@@ -301,12 +334,56 @@ describe('frontend-http-client', () => {
 
 			const responseBody = await sendPut(client, {
 				path: '/',
+				responseBodySchema: z.any(),
 			})
+			expect(responseBody).toBe(null)
+		})
 
-			expect(responseBody).containSubset({
-				status: 204,
-				statusText: 'No Content',
+		it('returns unexpected no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPut('/').thenReply(204)
+
+			await expect(
+				sendPut(client, {
+					path: '/',
+					responseBodySchema: z.any(),
+					isEmptyResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected empty response.]`,
+			)
+		})
+
+		it('returns not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPut('/').thenReply(200)
+
+			const responseBody = await sendPut(client, {
+				path: '/',
+				responseBodySchema: z.any(),
 			})
+			expect(responseBody).containSubset({
+				status: 200,
+				statusText: 'OK',
+			})
+		})
+
+		it('returns unexpected not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPut('/').thenReply(200)
+
+			await expect(
+				sendPut(client, {
+					path: '/',
+					responseBodySchema: z.any(),
+					isNonJSONResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected non-JSON response.]`,
+			)
 		})
 
 		it('throws an error if response does not pass validation', async () => {
@@ -484,6 +561,65 @@ describe('frontend-http-client', () => {
 			})
 		})
 
+		it('returns no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPatch('/').thenReply(204)
+
+			const responseBody = await sendPatch(client, {
+				path: '/',
+				responseBodySchema: z.any(),
+			})
+			expect(responseBody).toBe(null)
+		})
+
+		it('returns unexpected no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPatch('/').thenReply(204)
+
+			await expect(
+				sendPatch(client, {
+					path: '/',
+					responseBodySchema: z.any(),
+					isEmptyResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected empty response.]`,
+			)
+		})
+
+		it('returns not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPatch('/').thenReply(200)
+
+			const responseBody = await sendPatch(client, {
+				path: '/',
+				responseBodySchema: z.any(),
+			})
+			expect(responseBody).containSubset({
+				status: 200,
+				statusText: 'OK',
+			})
+		})
+
+		it('returns unexpected not json response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forPatch('/').thenReply(200)
+
+			await expect(
+				sendPatch(client, {
+					path: '/',
+					responseBodySchema: z.any(),
+					isNonJSONResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected non-JSON response.]`,
+			)
+		})
+
 		it('throws an error if response does not pass validation', async () => {
 			const client = wretch(mockServer.url)
 
@@ -659,6 +795,78 @@ describe('frontend-http-client', () => {
 			})
 		})
 
+		it('returns no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forGet('/').thenReply(204)
+
+			await expect(
+				sendGet(client, {
+					path: '/',
+					responseBodySchema: z.any(),
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected empty response.]`,
+			)
+		})
+
+		it('returns expected no content response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forGet('/').thenReply(204)
+
+			const response = await sendGet(client, {
+				path: '/',
+				responseBodySchema: z.null(),
+				isEmptyResponseExpected: true,
+			})
+
+			// This is for checking TS types, we are checking if it infers that the type is not WretchResponse correctly
+			if (response) {
+				// @ts-expect-error WretchResponse has this field, ResponseBody does not
+				expect(response.ok).toBe(true)
+			}
+
+			expect(response).toBe(null)
+		})
+
+		it('returns non-JSON response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forGet('/').thenReply(200)
+
+			await expect(
+				sendGet(client, {
+					path: '/',
+					responseBodySchema: z.any(),
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected non-JSON response.]`,
+			)
+		})
+
+		it('returns expected non-JSON response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forGet('/').thenReply(200)
+
+			const responseBody = await sendGet(client, {
+				path: '/',
+				responseBodySchema: z.any(),
+				isNonJSONResponseExpected: true,
+			})
+
+			// This is for checking TS types, we are checking if it infers the responseBody type as null | WretchResponse correctly
+			if (responseBody) {
+				expect(responseBody.ok).toBe(true)
+			}
+
+			expect(responseBody).containSubset({
+				status: 200,
+				statusText: 'OK',
+			})
+		})
+
 		it('throws an error if response does not pass validation', async () => {
 			const client = wretch(mockServer.url)
 
@@ -745,7 +953,7 @@ describe('frontend-http-client', () => {
 				responseBodySchema: responseSchema,
 			})
 
-			expect(response.data.code).toBe(99)
+			expect(response?.data.code).toBe(99)
 		})
 
 		it('should work without specifying an schema', async () => {
@@ -768,7 +976,7 @@ describe('frontend-http-client', () => {
 				responseBodySchema: responseSchema,
 			})
 
-			expect(response.data.code).toBe(99)
+			expect(response?.data.code).toBe(99)
 		})
 
 		it('should check types against schema input type', async () => {
@@ -803,7 +1011,7 @@ describe('frontend-http-client', () => {
 	})
 
 	describe('sendDelete', () => {
-		it('returns a status if proceeded', async () => {
+		it('returns no content response', async () => {
 			const client = wretch(mockServer.url)
 
 			await mockServer.forDelete('/').thenReply(204)
@@ -812,7 +1020,136 @@ describe('frontend-http-client', () => {
 				path: '/',
 			})
 
-			expect(response).toMatchObject({ status: 204 })
+			expect(response).toBeNull()
+		})
+
+		it('validates response if schema is provided', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forDelete('/').thenJson(200, { string: 1 })
+
+			await expect(
+				sendDelete(client, {
+					path: '/',
+					responseBodySchema: z.object({
+						string: z.string(),
+					}),
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(`
+				[ZodError: [
+				  {
+				    "code": "invalid_type",
+				    "expected": "string",
+				    "received": "number",
+				    "path": [
+				      "string"
+				    ],
+				    "message": "Expected string, received number"
+				  }
+				]]
+			`)
+		})
+
+		it('returns validated response if schema is provided and response is correct', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forDelete('/').thenJson(200, { string: '1' })
+
+			const response = await sendDelete(client, {
+				path: '/',
+				responseBodySchema: z.object({
+					string: z.string(),
+				}),
+			})
+
+			expect(response).toMatchInlineSnapshot(`
+				{
+				  "string": "1",
+				}
+			`)
+		})
+
+		it('supports query params', async () => {
+			const client = wretch(mockServer.url)
+			const testQueryParams = { param1: 'test', param2: 'test' }
+
+			await mockServer.forDelete().withQuery(testQueryParams).thenReply(204)
+
+			const response = await sendDelete(client, {
+				path: '/',
+				queryParams: testQueryParams,
+			})
+
+			expect(response).toBeNull()
+		})
+
+		it('validates query params', async () => {
+			const client = wretch(mockServer.url)
+			const testQueryParams = { param1: 'test', param2: 'test' }
+
+			await expect(
+				sendDelete(client, {
+					path: '/',
+					// @ts-expect-error Schema does not match the object
+					queryParams: testQueryParams,
+					queryParamsSchema: z.string(),
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(`
+				[ZodError: [
+				  {
+				    "code": "invalid_type",
+				    "expected": "string",
+				    "received": "object",
+				    "path": [],
+				    "message": "Expected string, received object"
+				  }
+				]]
+			`)
+		})
+
+		it('throws if content is expected, but response is empty', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forDelete('/').thenReply(204)
+
+			await expect(
+				sendDelete(client, {
+					path: '/',
+					isEmptyResponseExpected: false,
+					responseBodySchema: z.any(),
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected empty response.]`,
+			)
+		})
+
+		it('returns non-JSON response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forDelete('/').thenReply(200)
+
+			const responseBody = await sendDelete(client, {
+				path: '/',
+			})
+			expect(responseBody).containSubset({
+				status: 200,
+				statusText: 'OK',
+			})
+		})
+
+		it('returns unexpected non-JSON response', async () => {
+			const client = wretch(mockServer.url)
+
+			await mockServer.forDelete('/').thenReply(200)
+
+			await expect(
+				sendDelete(client, {
+					path: '/',
+					isNonJSONResponseExpected: false,
+				}),
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: Request to / has returned an unexpected non-JSON response.]`,
+			)
 		})
 	})
 })

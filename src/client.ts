@@ -1,14 +1,21 @@
 import { stringify } from 'fast-querystring'
-import type { z } from 'zod'
+import type { WretchResponse } from 'wretch'
+import { WretchError } from 'wretch/resolver'
+import { z } from 'zod'
 
-import { type Either, failure, success, isFailure } from './either.js'
 import type {
-	CommonRequestParams,
+	DeleteParams,
+	FreeDeleteParams,
 	FreeQueryParams,
 	QueryParams,
+	RequestResultType,
 	ResourceChangeParams,
 	WretchInstance,
 } from './types.js'
+import { tryToResolveJsonBody } from './utils/bodyUtils.js'
+import { type Either, failure, success, isFailure } from './utils/either.js'
+
+const UNKNOWN_SCHEMA = z.unknown()
 
 function parseRequestBody<RequestBodySchema extends z.Schema>({
 	body,
@@ -72,44 +79,22 @@ function parseQueryParams<RequestQuerySchema extends z.Schema>({
 	return success(`?${stringify(queryParams)}`)
 }
 
-function parseResponseBody<ResponseBody>({
-	response,
-	responseBodySchema,
-	path,
-}: {
-	response: ResponseBody
-	responseBodySchema?: z.ZodSchema<ResponseBody>
-	path: string
-}): Either<z.ZodError, ResponseBody> {
-	if (!responseBodySchema) {
-		return success(response)
-	}
-
-	const result = responseBodySchema.safeParse(response)
-
-	if (!result.success) {
-		console.error({
-			path,
-			response,
-			error: result.error,
-		})
-
-		return failure(result.error)
-	}
-
-	return success(response)
-}
-
 async function sendResourceChange<
 	T extends WretchInstance,
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
+	IsNonJSONResponseExpected extends boolean = false,
 >(
 	wretch: T,
 	method: 'post' | 'put' | 'patch',
-	params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>,
-) {
+	params: ResourceChangeParams<
+		RequestBodySchema,
+		ResponseBody,
+		RequestQuerySchema,
+		IsNonJSONResponseExpected
+	>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	const body = parseRequestBody({
 		body: params.body,
 		requestBodySchema: params.requestBodySchema,
@@ -132,23 +117,53 @@ async function sendResourceChange<
 
 	return wretch[method](body.result, `${params.path}${queryParams.result}`).res(
 		async (response) => {
-			if (response.headers.get('content-type')?.includes('application/json')) {
-				const parsedResponse = parseResponseBody({
-					response: (await response.json()) as ResponseBody,
-					responseBodySchema: params.responseBodySchema,
-					path: params.path,
-				})
+			const bodyParseResult = await tryToResolveJsonBody(
+				response,
+				params.path,
+				params.responseBodySchema,
+			)
 
-				if (isFailure(parsedResponse)) {
-					return Promise.reject(parsedResponse.error)
+			if (bodyParseResult.error === 'NOT_JSON') {
+				if (params.isNonJSONResponseExpected === false) {
+					return Promise.reject(
+						buildWretchError(
+							`Request to ${params.path} has returned an unexpected non-JSON response.`,
+							response,
+						),
+					)
 				}
-
-				return parsedResponse.result
+				return response
 			}
 
-			return response as unknown as Promise<ResponseBody>
+			if (bodyParseResult.error === 'EMPTY_RESPONSE') {
+				if (params.isEmptyResponseExpected === false) {
+					return Promise.reject(
+						buildWretchError(
+							`Request to ${params.path} has returned an unexpected empty response.`,
+							response,
+						),
+					)
+				}
+
+				return null
+			}
+
+			if (bodyParseResult.error) {
+				return Promise.reject(bodyParseResult.error)
+			}
+
+			return bodyParseResult.result
 		},
-	)
+	) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>>
+}
+
+function buildWretchError(message: string, response: WretchResponse): WretchError {
+	const error = new WretchError(message)
+	error.response = response
+	error.status = response.status
+	error.url = response.url
+
+	return error
 }
 
 /* METHODS */
@@ -159,12 +174,13 @@ export async function sendGet<
 	T extends WretchInstance,
 	ResponseBody,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
+	IsNonJSONResponseExpected extends boolean = false,
 >(
 	wretch: T,
 	params: RequestQuerySchema extends z.Schema
-		? QueryParams<RequestQuerySchema, ResponseBody>
-		: FreeQueryParams<ResponseBody>,
-): Promise<ResponseBody> {
+		? QueryParams<RequestQuerySchema, ResponseBody, IsNonJSONResponseExpected>
+		: FreeQueryParams<ResponseBody, IsNonJSONResponseExpected>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	const queryParams = parseQueryParams({
 		queryParams: params.queryParams,
 		queryParamsSchema: params.queryParamsSchema,
@@ -175,22 +191,43 @@ export async function sendGet<
 		return Promise.reject(queryParams.error)
 	}
 
-	return wretch
-		.get(`${params.path}${queryParams.result}`)
-		.json()
-		.then((response) => {
-			const parsedResponse = parseResponseBody({
-				response: response as ResponseBody,
-				responseBodySchema: params.responseBodySchema,
-				path: params.path,
-			})
+	return wretch.get(`${params.path}${queryParams.result}`).res(async (response) => {
+		const bodyParseResult = await tryToResolveJsonBody(
+			response,
+			params.path,
+			params.responseBodySchema,
+		)
 
-			if (isFailure(parsedResponse)) {
-				return Promise.reject(parsedResponse.error)
+		if (bodyParseResult.error === 'NOT_JSON') {
+			if (params.isNonJSONResponseExpected) {
+				return response
 			}
+			return Promise.reject(
+				buildWretchError(
+					`Request to ${params.path} has returned an unexpected non-JSON response.`,
+					response,
+				),
+			)
+		}
 
-			return parsedResponse.result
-		})
+		if (bodyParseResult.error === 'EMPTY_RESPONSE') {
+			if (params.isEmptyResponseExpected) {
+				return null
+			}
+			return Promise.reject(
+				buildWretchError(
+					`Request to ${params.path} has returned an unexpected empty response.`,
+					response,
+				),
+			)
+		}
+
+		if (bodyParseResult.error) {
+			return Promise.reject(bodyParseResult.error)
+		}
+
+		return bodyParseResult.result
+	}) as RequestResultType<ResponseBody, IsNonJSONResponseExpected>
 }
 
 /* POST */
@@ -200,7 +237,16 @@ export function sendPost<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>) {
+	IsNonJSONResponseExpected extends boolean = false,
+>(
+	wretch: T,
+	params: ResourceChangeParams<
+		RequestBodySchema,
+		ResponseBody,
+		RequestQuerySchema,
+		IsNonJSONResponseExpected
+	>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	return sendResourceChange(wretch, 'post', params)
 }
 
@@ -211,7 +257,16 @@ export function sendPut<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>) {
+	IsNonJSONResponseExpected extends boolean = false,
+>(
+	wretch: T,
+	params: ResourceChangeParams<
+		RequestBodySchema,
+		ResponseBody,
+		RequestQuerySchema,
+		IsNonJSONResponseExpected
+	>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	return sendResourceChange(wretch, 'put', params)
 }
 
@@ -222,15 +277,79 @@ export function sendPatch<
 	ResponseBody,
 	RequestBodySchema extends z.Schema | undefined = undefined,
 	RequestQuerySchema extends z.Schema | undefined = undefined,
->(wretch: T, params: ResourceChangeParams<RequestBodySchema, ResponseBody, RequestQuerySchema>) {
+	IsNonJSONResponseExpected extends boolean = false,
+>(
+	wretch: T,
+	params: ResourceChangeParams<
+		RequestBodySchema,
+		ResponseBody,
+		RequestQuerySchema,
+		IsNonJSONResponseExpected
+	>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
 	return sendResourceChange(wretch, 'patch', params)
 }
 
 /* DELETE */
 
-export function sendDelete<T extends WretchInstance, ResponseBody>(
+export function sendDelete<
+	T extends WretchInstance,
+	ResponseBody,
+	RequestQuerySchema extends z.Schema | undefined = undefined,
+	IsNonJSONResponseExpected extends boolean = false,
+>(
 	wretch: T,
-	params: Pick<CommonRequestParams<ResponseBody>, 'path'>,
-) {
-	return wretch.delete(params.path).res()
+	params: RequestQuerySchema extends z.Schema
+		? DeleteParams<RequestQuerySchema, ResponseBody, IsNonJSONResponseExpected>
+		: FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected>,
+): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>> {
+	const queryParams = parseQueryParams({
+		queryParams: params.queryParams,
+		queryParamsSchema: params.queryParamsSchema,
+		path: params.path,
+	})
+
+	if (isFailure(queryParams)) {
+		return Promise.reject(queryParams.error)
+	}
+
+	return wretch.delete(`${params.path}${queryParams.result}`).res(async (response) => {
+		const bodyParseResult = await tryToResolveJsonBody(
+			response,
+			params.path,
+			params.responseBodySchema ?? UNKNOWN_SCHEMA,
+		)
+
+		if (bodyParseResult.error === 'NOT_JSON') {
+			if (params.isNonJSONResponseExpected === false) {
+				return Promise.reject(
+					buildWretchError(
+						`Request to ${params.path} has returned an unexpected non-JSON response.`,
+						response,
+					),
+				)
+			}
+
+			return response
+		}
+
+		if (bodyParseResult.error === 'EMPTY_RESPONSE') {
+			if (params.isEmptyResponseExpected === false) {
+				return Promise.reject(
+					buildWretchError(
+						`Request to ${params.path} has returned an unexpected empty response.`,
+						response,
+					),
+				)
+			}
+
+			return null
+		}
+
+		if (bodyParseResult.error) {
+			return Promise.reject(bodyParseResult.error)
+		}
+
+		return bodyParseResult.result
+	}) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected>>
 }

@@ -35,6 +35,34 @@ const responseBody = await sendPost(client, {
 })
 ```
 
+### No content response handling (HTTP 204)
+
+SDK methods has a parameter (`isEmptyResponseExpected`) to specify if 204 response should be treated as an error or not. By default it is treated as
+valid except on `sendGet` method where it is treated as an error. Usage example:
+
+```ts
+const response = await sendGet(client, {
+	path: '/',
+	isEmptyResponseExpected: true,
+})
+```
+
+if `204` responses are expected, the library will return null, if not, it will throw an error.
+
+### Non-JSON response handling
+
+SDK methods has a parameter (`isNonJSONResponseExpected`) to specify if non json responses should be treated as an error
+or not. By default it is treated as valid except on `sendGet` method where it is treated as an error. Usage example:
+
+```ts
+const response = await sendGet(client, {
+	path: '/',
+	isNonJSONResponseExpected: true,
+})
+```
+
+if non-JSON responses are expected, the library will return null, if not, it will throw an error.
+
 ## Credits
 
 This library is brought to you by a joint effort of Lokalise engineers:
