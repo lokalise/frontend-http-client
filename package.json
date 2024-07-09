@@ -54,7 +54,7 @@
     "@vitest/coverage-v8": "^2.0.1",
     "jest-fail-on-console": "^3.1.2",
     "mockttp": "^3.13.0",
-    "rimraf": "^5.0.8",
+    "rimraf": "^6.0.0",
     "tsup": "8.1.0",
     "typescript": "~5.5.3",
     "vitest": "^2.0.1"
