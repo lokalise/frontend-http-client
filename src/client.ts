@@ -173,7 +173,7 @@ export function sendPost<
   ResponseBody,
   RequestBodySchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
+  IsNonJSONResponseExpected extends boolean = true,
   IsEmptyResponseExpected extends boolean = false,
 >(
   wretch: T,
@@ -195,7 +195,7 @@ export function sendPut<
   ResponseBody,
   RequestBodySchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
+  IsNonJSONResponseExpected extends boolean = true,
   IsEmptyResponseExpected extends boolean = false,
 >(
   wretch: T,
@@ -217,7 +217,7 @@ export function sendPatch<
   ResponseBody,
   RequestBodySchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
+  IsNonJSONResponseExpected extends boolean = true,
   IsEmptyResponseExpected extends boolean = false,
 >(
   wretch: T,
@@ -238,7 +238,7 @@ export function sendDelete<
   T extends WretchInstance,
   ResponseBody,
   RequestQuerySchema extends z.Schema | undefined = undefined,
-  IsNonJSONResponseExpected extends boolean = false,
+  IsNonJSONResponseExpected extends boolean = true,
   IsEmptyResponseExpected extends boolean = true,
 >(
   wretch: T,
