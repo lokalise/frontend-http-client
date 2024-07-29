@@ -50,7 +50,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@lokalise/biome-config": "^1.0.0",
-    "@types/node": "^20.11.5",
+    "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^2.0.1",
     "jest-fail-on-console": "^3.1.2",
     "mockttp": "^3.13.0",
