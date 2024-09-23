@@ -55,7 +55,7 @@
     "jest-fail-on-console": "^3.1.2",
     "mockttp": "^3.13.0",
     "rimraf": "^6.0.0",
-    "tsup": "8.2.4",
+    "tsup": "8.3.0",
     "typescript": "~5.6.2",
     "vitest": "^2.0.1"
   },
