@@ -37,6 +37,7 @@
     "clean": "rimraf dist",
     "lint": "biome check . && tsc --project tsconfig.lint.json --noEmit",
     "lint:fix": "biome check --write",
+    "lint:ts": "tsc --project tsconfig.lint.json --noEmit",
     "test": "vitest run --coverage",
     "prepublishOnly": "npm run clean && npm run build:release"
   },

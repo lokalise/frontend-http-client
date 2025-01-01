@@ -1,11 +1,13 @@
 import { z } from 'zod'
 
+import type { ResourceChangeRouteDefinition } from './routeDefinition.js'
 import type {
   DeleteParams,
   FreeDeleteParams,
   FreeQueryParams,
   QueryParams,
   RequestResultType,
+  ResourceChangeByDefinitionParams,
   ResourceChangeParams,
   WretchInstance,
 } from './types.js'
@@ -300,4 +302,45 @@ export function sendDelete<
 
     return bodyParseResult.result
   }) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>>
+}
+
+export function sendByRouteDefinition<
+  T extends WretchInstance,
+  IsNonJSONResponseExpected extends boolean,
+  IsEmptyResponseExpected extends boolean,
+  RequestBodySchema extends z.Schema | undefined = undefined,
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+>(
+  wretch: T,
+  routeDefinition: ResourceChangeRouteDefinition<
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    RequestBodySchema,
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema
+  >,
+  params: ResourceChangeByDefinitionParams<
+    PathParamsSchema,
+    RequestBodySchema,
+    RequestQuerySchema,
+    RequestHeaderSchema
+  >,
+) {
+  return sendResourceChange(wretch, routeDefinition.method, {
+    body: params.body,
+    isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
+    isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
+    // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
+    requestBodySchema: routeDefinition.requestBodySchema as any,
+    // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
+    responseBodySchema: routeDefinition.responseBodySchema as any,
+    queryParams: params.queryParams,
+    queryParamsSchema: routeDefinition.requestQuerySchema,
+    path: routeDefinition.pathResolver(params.pathParams),
+  })
 }

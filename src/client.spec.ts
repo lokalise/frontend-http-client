@@ -4,7 +4,15 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import wretch from 'wretch'
 import { z } from 'zod'
 
-import { sendDelete, sendGet, sendPatch, sendPost, sendPut } from './client.js'
+import {
+  sendByRouteDefinition,
+  sendDelete,
+  sendGet,
+  sendPatch,
+  sendPost,
+  sendPut,
+} from './client.js'
+import { buildRouteDefinition } from './routeDefinition.js'
 
 describe('frontend-http-client', () => {
   const mockServer = getLocal()
@@ -16,6 +24,46 @@ describe('frontend-http-client', () => {
   })
   beforeEach(() => mockServer.start())
   afterEach(() => mockServer.stop())
+
+  describe('sendByRouteDefinition', () => {
+    it('returns deserialized response', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildRouteDefinition({
+        method: 'post',
+        isEmptyResponseExpected: false,
+        isNonJSONResponseExpected: false,
+        responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: undefined,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByRouteDefinition(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        }
+      })
+
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+  })
 
   describe('sendPost', () => {
     it('returns deserialized response', async () => {
