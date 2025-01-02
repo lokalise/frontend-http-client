@@ -31,6 +31,10 @@ describe('frontend-http-client', () => {
 
       await mockServer.forPost('/users/1').thenJson(200, { data: { code: 99 } })
 
+      const requestBodySchema = z.object({
+        isActive: z.boolean(),
+      })
+
       const responseBodySchema = z.object({
         data: z.object({
           code: z.number(),
@@ -47,15 +51,48 @@ describe('frontend-http-client', () => {
         isNonJSONResponseExpected: false,
         responseBodySchema,
         requestPathParamsSchema: pathSchema,
-        requestBodySchema: undefined,
+        requestBodySchema: requestBodySchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
       const responseBody = await sendByRouteDefinition(client, routeDefinition, {
         pathParams: {
           userId: 1,
-        }
+        },
+        body: {
+          isActive: true,
+        },
       })
+
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('returns deserialized response without body or path params', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/users').thenJson(200, { data: { code: 99 } })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const routeDefinition = buildRouteDefinition({
+        method: 'post',
+        isEmptyResponseExpected: false,
+        isNonJSONResponseExpected: false,
+        responseBodySchema,
+        requestPathParamsSchema: undefined,
+        requestBodySchema: undefined,
+        pathResolver: () => `/users`,
+      })
+
+      const responseBody = await sendByRouteDefinition(client, routeDefinition, {})
 
       expect(responseBody).toEqual({
         data: {

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { ResourceChangeRouteDefinition } from './routeDefinition.js'
+import type { InferSchemaOutput, ResourceChangeRouteDefinition } from './routeDefinition.js'
 import type {
   DeleteParams,
   FreeDeleteParams,
@@ -308,7 +308,7 @@ export function sendByRouteDefinition<
   T extends WretchInstance,
   IsNonJSONResponseExpected extends boolean,
   IsEmptyResponseExpected extends boolean,
-  RequestBodySchema extends z.Schema | undefined = undefined,
+  RequestBodySchema extends z.Schema | undefined,
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
@@ -318,6 +318,7 @@ export function sendByRouteDefinition<
   routeDefinition: ResourceChangeRouteDefinition<
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
+    InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParamsSchema,
@@ -325,13 +326,14 @@ export function sendByRouteDefinition<
     RequestHeaderSchema
   >,
   params: ResourceChangeByDefinitionParams<
-    PathParamsSchema,
-    RequestBodySchema,
-    RequestQuerySchema,
-    RequestHeaderSchema
+    InferSchemaOutput<PathParamsSchema>,
+    InferSchemaOutput<RequestBodySchema>,
+    InferSchemaOutput<RequestQuerySchema>,
+    InferSchemaOutput<RequestHeaderSchema>
   >,
 ) {
   return sendResourceChange(wretch, routeDefinition.method, {
+    // @ts-expect-error magic type inferring happening
     body: params.body,
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
@@ -339,8 +341,10 @@ export function sendByRouteDefinition<
     requestBodySchema: routeDefinition.requestBodySchema as any,
     // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
     responseBodySchema: routeDefinition.responseBodySchema as any,
+    // @ts-expect-error magic type inferring happening
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
+    // @ts-expect-error magic type inferring happening
     path: routeDefinition.pathResolver(params.pathParams),
   })
 }

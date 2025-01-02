@@ -112,16 +112,20 @@ export type ResourceChangeParams<
     : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>)
 
 export type ResourceChangeByDefinitionParams<
-  PathParamsSchema extends z.Schema | undefined = undefined,
-  RequestBodySchema extends z.Schema | undefined = undefined,
-  RequestQuerySchema extends z.Schema | undefined = undefined,
-  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  PathParams = undefined,
+  RequestBody = undefined,
+  RequestQuery = never,
+  RequestHeader = never,
 > = {
-  body: RequestBodySchema extends z.Schema ? z.input<RequestBodySchema> : never
-  queryParams: RequestQuerySchema extends z.Schema ? z.input<RequestQuerySchema> : never
-  headers: RequestHeaderSchema extends z.Schema ? z.input<RequestHeaderSchema> : never
-  pathParams: PathParamsSchema extends z.Schema ? z.infer<PathParamsSchema> : never
-}
+  body: RequestBody extends undefined ? never : RequestBody
+  queryParams: RequestQuery extends never | undefined ? never : RequestQuery
+  headers: RequestHeader extends never | undefined ? never : RequestHeader
+  pathParams: PathParams extends undefined ? never : PathParams
+} extends infer Mandatory
+  ? {
+      [K in keyof Mandatory as Mandatory[K] extends never ? never : K]?: Mandatory[K]
+    }
+  : never
 
 // biome-ignore lint/suspicious/noExplicitAny: We don't know which addons Wretch will have, and we don't really care, hence any
 export type WretchInstance = Wretch<any, unknown, undefined>
