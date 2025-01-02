@@ -331,7 +331,13 @@ export function sendByRouteDefinition<
     InferSchemaOutput<RequestQuerySchema>,
     InferSchemaOutput<RequestHeaderSchema>
   >,
-) {
+): Promise<
+  RequestResultType<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >
+> {
   return sendResourceChange(wretch, routeDefinition.method, {
     // @ts-expect-error magic type inferring happening
     body: params.body,
