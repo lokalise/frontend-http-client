@@ -1,14 +1,19 @@
 import { z } from 'zod'
 
-import type { InferSchemaOutput, ResourceChangeRouteDefinition } from './routeDefinition.js'
+import type {
+  DeleteRouteDefinition,
+  GetRouteDefinition,
+  InferSchemaOutput,
+  PayloadRouteDefinition,
+} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import type {
   DeleteParams,
   FreeDeleteParams,
-  FreeQueryParams,
-  QueryParams,
+  GetParams,
+  PayloadRouteRequestParams,
   RequestResultType,
-  ResourceChangeByDefinitionParams,
   ResourceChangeParams,
+  RouteRequestParams,
   WretchInstance,
 } from './types.js'
 import { parseRequestBody, tryToResolveJsonBody } from './utils/bodyUtils.js'
@@ -110,14 +115,12 @@ export function sendGet<
   IsEmptyResponseExpected extends boolean = false,
 >(
   wretch: T,
-  params: RequestQuerySchema extends z.Schema
-    ? QueryParams<
-        RequestQuerySchema,
-        ResponseBody,
-        IsNonJSONResponseExpected,
-        IsEmptyResponseExpected
-      >
-    : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>,
+  params: GetParams<
+    ResponseBody,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    RequestQuerySchema
+  >,
 ): Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>> {
   const queryParams = parseQueryParams({
     queryParams: params.queryParams,
@@ -304,28 +307,28 @@ export function sendDelete<
   }) as Promise<RequestResultType<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>>
 }
 
-export function sendByRouteDefinition<
+export function sendByPayloadRoute<
   T extends WretchInstance,
-  IsNonJSONResponseExpected extends boolean,
-  IsEmptyResponseExpected extends boolean,
   RequestBodySchema extends z.Schema | undefined,
   ResponseBodySchema extends z.Schema | undefined = undefined,
   PathParamsSchema extends z.Schema | undefined = undefined,
   RequestQuerySchema extends z.Schema | undefined = undefined,
   RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
 >(
   wretch: T,
-  routeDefinition: ResourceChangeRouteDefinition<
-    IsNonJSONResponseExpected,
-    IsEmptyResponseExpected,
+  routeDefinition: PayloadRouteDefinition<
     InferSchemaOutput<PathParamsSchema>,
     RequestBodySchema,
     ResponseBodySchema,
     PathParamsSchema,
     RequestQuerySchema,
-    RequestHeaderSchema
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
   >,
-  params: ResourceChangeByDefinitionParams<
+  params: PayloadRouteRequestParams<
     InferSchemaOutput<PathParamsSchema>,
     InferSchemaOutput<RequestBodySchema>,
     InferSchemaOutput<RequestQuerySchema>,
@@ -345,6 +348,94 @@ export function sendByRouteDefinition<
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
     // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
     requestBodySchema: routeDefinition.requestBodySchema as any,
+    // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
+    responseBodySchema: routeDefinition.responseBodySchema as any,
+    // @ts-expect-error magic type inferring happening
+    queryParams: params.queryParams,
+    queryParamsSchema: routeDefinition.requestQuerySchema,
+    // @ts-expect-error magic type inferring happening
+    path: routeDefinition.pathResolver(params.pathParams),
+  })
+}
+
+export function sendByGetRoute<
+  T extends WretchInstance,
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = false,
+>(
+  wretch: T,
+  routeDefinition: GetRouteDefinition<
+    InferSchemaOutput<PathParamsSchema>,
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >,
+  params: RouteRequestParams<
+    InferSchemaOutput<PathParamsSchema>,
+    InferSchemaOutput<RequestQuerySchema>,
+    InferSchemaOutput<RequestHeaderSchema>
+  >,
+): Promise<
+  RequestResultType<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >
+> {
+  return sendGet(wretch, {
+    isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
+    isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
+    // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
+    responseBodySchema: routeDefinition.responseBodySchema as any,
+    // @ts-expect-error magic type inferring happening
+    queryParams: params.queryParams,
+    queryParamsSchema: routeDefinition.requestQuerySchema,
+    // @ts-expect-error magic type inferring happening
+    path: routeDefinition.pathResolver(params.pathParams),
+  })
+}
+
+export function sendByDeleteRoute<
+  T extends WretchInstance,
+  ResponseBodySchema extends z.Schema | undefined = undefined,
+  PathParamsSchema extends z.Schema | undefined = undefined,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+  RequestHeaderSchema extends z.Schema | undefined = undefined,
+  IsNonJSONResponseExpected extends boolean = false,
+  IsEmptyResponseExpected extends boolean = true,
+>(
+  wretch: T,
+  routeDefinition: DeleteRouteDefinition<
+    InferSchemaOutput<PathParamsSchema>,
+    ResponseBodySchema,
+    PathParamsSchema,
+    RequestQuerySchema,
+    RequestHeaderSchema,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >,
+  params: RouteRequestParams<
+    InferSchemaOutput<PathParamsSchema>,
+    InferSchemaOutput<RequestQuerySchema>,
+    InferSchemaOutput<RequestHeaderSchema>
+  >,
+): Promise<
+  RequestResultType<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected
+  >
+> {
+  return sendDelete(wretch, {
+    isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
+    isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
     // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
     responseBodySchema: routeDefinition.responseBodySchema as any,
     // @ts-expect-error magic type inferring happening

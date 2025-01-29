@@ -4,6 +4,8 @@ export {
   sendPut,
   sendDelete,
   sendPatch,
-  sendByRouteDefinition,
+  sendByGetRoute,
+  sendByPayloadRoute,
+  sendByDeleteRoute,
   UNKNOWN_SCHEMA,
 } from './src/client.js'

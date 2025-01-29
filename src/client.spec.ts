@@ -5,14 +5,20 @@ import wretch from 'wretch'
 import { z } from 'zod'
 
 import {
-  sendByRouteDefinition,
+  buildDeleteRoute,
+  buildGetRoute,
+  buildPayloadRoute,
+} from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
+import {
+  sendByDeleteRoute,
+  sendByGetRoute,
+  sendByPayloadRoute,
   sendDelete,
   sendGet,
   sendPatch,
   sendPost,
   sendPut,
 } from './client.js'
-import { buildRouteDefinition } from './routeDefinition.js'
 
 describe('frontend-http-client', () => {
   const mockServer = getLocal()
@@ -25,8 +31,8 @@ describe('frontend-http-client', () => {
   beforeEach(() => mockServer.start())
   afterEach(() => mockServer.stop())
 
-  describe('sendByRouteDefinition', () => {
-    it('returns deserialized response', async () => {
+  describe('sendByRoute', () => {
+    it('returns deserialized response for POST', async () => {
       const client = wretch(mockServer.url)
 
       await mockServer.forPost('/users/1').thenJson(200, { data: { code: 99 } })
@@ -45,17 +51,15 @@ describe('frontend-http-client', () => {
         userId: z.number(),
       })
 
-      const routeDefinition = buildRouteDefinition({
+      const routeDefinition = buildPayloadRoute({
         method: 'post',
-        isEmptyResponseExpected: false,
-        isNonJSONResponseExpected: false,
         responseBodySchema,
         requestPathParamsSchema: pathSchema,
         requestBodySchema: requestBodySchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,
       })
 
-      const responseBody = await sendByRouteDefinition(client, routeDefinition, {
+      const responseBody = await sendByPayloadRoute(client, routeDefinition, {
         pathParams: {
           userId: 1,
         },
@@ -71,6 +75,72 @@ describe('frontend-http-client', () => {
       })
     })
 
+    it('returns deserialized response for GET', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const querySchema = z.object({
+        id: z.string(),
+      })
+
+      const routeDefinition = buildGetRoute({
+        responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestQuerySchema: querySchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByGetRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+        queryParams: {
+          id: 'frfr',
+        },
+      })
+
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('returns response for DELETE', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forDelete('/users/1').thenReply(204)
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildDeleteRoute({
+        responseBodySchema: undefined,
+        requestPathParamsSchema: pathSchema,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByDeleteRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+      })
+
+      expect(responseBody).toBeNull()
+    })
+
     it('returns deserialized response without body or path params', async () => {
       const client = wretch(mockServer.url)
 
@@ -82,17 +152,16 @@ describe('frontend-http-client', () => {
         }),
       })
 
-      const routeDefinition = buildRouteDefinition({
+      const routeDefinition = buildPayloadRoute({
         method: 'post',
         isEmptyResponseExpected: false,
         isNonJSONResponseExpected: false,
         responseBodySchema,
-        requestPathParamsSchema: undefined,
         requestBodySchema: undefined,
-        pathResolver: () => `/users`,
+        pathResolver: () => '/users',
       })
 
-      const responseBody = await sendByRouteDefinition(client, routeDefinition, {})
+      const responseBody = await sendByPayloadRoute(client, routeDefinition, {})
 
       expect(responseBody).toEqual({
         data: {
