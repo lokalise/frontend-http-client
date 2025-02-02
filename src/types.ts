@@ -155,7 +155,7 @@ export type PayloadRouteRequestParams<
   pathParams: PathParams extends undefined ? never : PathParams
 } extends infer Mandatory
   ? {
-      [K in keyof Mandatory as Mandatory[K] extends never ? never : K]?: Mandatory[K]
+      [K in keyof Mandatory as Mandatory[K] extends never ? never : K]: Mandatory[K]
     }
   : never
 
@@ -169,7 +169,7 @@ export type RouteRequestParams<
   pathParams: PathParams extends undefined ? never : PathParams
 } extends infer Mandatory
   ? {
-      [K in keyof Mandatory as Mandatory[K] extends never ? never : K]?: Mandatory[K]
+      [K in keyof Mandatory as Mandatory[K] extends never ? never : K]: Mandatory[K]
     }
   : never
 

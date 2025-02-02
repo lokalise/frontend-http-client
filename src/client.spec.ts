@@ -75,7 +75,43 @@ describe('frontend-http-client', () => {
       })
     })
 
-    it('returns deserialized response for GET', async () => {
+    it('returns deserialized response for POST without a body', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forPost('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildPayloadRoute({
+        method: 'post',
+        responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestBodySchema: undefined,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByPayloadRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
+        },
+      })
+
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('returns deserialized response for GET with query params', async () => {
       const client = wretch(mockServer.url)
 
       await mockServer.forGet('/users/1').thenJson(200, { data: { code: 99 } })
@@ -107,6 +143,41 @@ describe('frontend-http-client', () => {
         },
         queryParams: {
           id: 'frfr',
+        },
+      })
+
+      expect(responseBody).toEqual({
+        data: {
+          code: 99,
+        },
+      })
+    })
+
+    it('returns deserialized response for GET without query params', async () => {
+      const client = wretch(mockServer.url)
+
+      await mockServer.forGet('/users/1').thenJson(200, { data: { code: 99 } })
+
+      const responseBodySchema = z.object({
+        data: z.object({
+          code: z.number(),
+        }),
+      })
+
+      const pathSchema = z.object({
+        userId: z.number(),
+      })
+
+      const routeDefinition = buildGetRoute({
+        responseBodySchema,
+        requestPathParamsSchema: pathSchema,
+        requestQuerySchema: undefined,
+        pathResolver: (pathParams) => `/users/${pathParams.userId}`,
+      })
+
+      const responseBody = await sendByGetRoute(client, routeDefinition, {
+        pathParams: {
+          userId: 1,
         },
       })
 
