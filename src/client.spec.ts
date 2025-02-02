@@ -127,6 +127,7 @@ describe('frontend-http-client', () => {
       })
 
       const routeDefinition = buildDeleteRoute({
+        isEmptyResponseExpected: true,
         responseBodySchema: undefined,
         requestPathParamsSchema: pathSchema,
         pathResolver: (pathParams) => `/users/${pathParams.userId}`,

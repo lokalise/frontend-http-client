@@ -8,11 +8,12 @@ import type {
 } from '@lokalise/universal-ts-utils/api-contracts/apiContracts'
 import type {
   DeleteParams,
+  DeleteParamsWrapper,
   FreeDeleteParams,
-  GetParams,
+  GetParamsWrapper,
+  PayloadRequestParamsWrapper,
   PayloadRouteRequestParams,
   RequestResultType,
-  ResourceChangeParams,
   RouteRequestParams,
   WretchInstance,
 } from './types.js'
@@ -33,7 +34,7 @@ function sendResourceChange<
 >(
   wretch: T,
   method: 'post' | 'put' | 'patch',
-  params: ResourceChangeParams<
+  params: PayloadRequestParamsWrapper<
     RequestBodySchema,
     ResponseBody,
     IsNonJSONResponseExpected,
@@ -115,7 +116,7 @@ export function sendGet<
   IsEmptyResponseExpected extends boolean = false,
 >(
   wretch: T,
-  params: GetParams<
+  params: GetParamsWrapper<
     ResponseBody,
     IsNonJSONResponseExpected,
     IsEmptyResponseExpected,
@@ -182,7 +183,7 @@ export function sendPost<
   IsEmptyResponseExpected extends boolean = false,
 >(
   wretch: T,
-  params: ResourceChangeParams<
+  params: PayloadRequestParamsWrapper<
     RequestBodySchema,
     ResponseBody,
     IsNonJSONResponseExpected,
@@ -204,7 +205,7 @@ export function sendPut<
   IsEmptyResponseExpected extends boolean = false,
 >(
   wretch: T,
-  params: ResourceChangeParams<
+  params: PayloadRequestParamsWrapper<
     RequestBodySchema,
     ResponseBody,
     IsNonJSONResponseExpected,
@@ -226,7 +227,7 @@ export function sendPatch<
   IsEmptyResponseExpected extends boolean = false,
 >(
   wretch: T,
-  params: ResourceChangeParams<
+  params: PayloadRequestParamsWrapper<
     RequestBodySchema,
     ResponseBody,
     IsNonJSONResponseExpected,
@@ -392,14 +393,18 @@ export function sendByGetRoute<
   return sendGet(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
-    // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
-    responseBodySchema: routeDefinition.responseBodySchema as any,
+    responseBodySchema: routeDefinition.responseBodySchema,
     // @ts-expect-error magic type inferring happening
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
     path: routeDefinition.pathResolver(params.pathParams),
-  })
+  } as GetParamsWrapper<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    RequestQuerySchema
+  >)
 }
 
 export function sendByDeleteRoute<
@@ -436,12 +441,16 @@ export function sendByDeleteRoute<
   return sendDelete(wretch, {
     isEmptyResponseExpected: routeDefinition.isEmptyResponseExpected,
     isNonJSONResponseExpected: routeDefinition.isNonJSONResponseExpected,
-    // biome-ignore lint/suspicious/noExplicitAny: FixMe try to find a solution
-    responseBodySchema: routeDefinition.responseBodySchema as any,
+    responseBodySchema: routeDefinition.responseBodySchema,
     // @ts-expect-error magic type inferring happening
     queryParams: params.queryParams,
     queryParamsSchema: routeDefinition.requestQuerySchema,
     // @ts-expect-error magic type inferring happening
     path: routeDefinition.pathResolver(params.pathParams),
-  })
+  } as DeleteParamsWrapper<
+    InferSchemaOutput<ResponseBodySchema>,
+    IsNonJSONResponseExpected,
+    IsEmptyResponseExpected,
+    RequestQuerySchema
+  >)
 }

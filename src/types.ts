@@ -88,12 +88,16 @@ export type RequestResultType<
 > = isEmptyResponseExpected extends true
   ? isNonJSONResponseExpected extends true
     ? WretchResponse | null
-    : ResponseBody | null
+    : ResponseBody extends undefined
+      ? null
+      : ResponseBody | null
   : isNonJSONResponseExpected extends true
     ? WretchResponse
-    : ResponseBody
+    : ResponseBody extends undefined
+      ? null
+      : ResponseBody
 
-export type ResourceChangeParams<
+export type PayloadRequestParamsWrapper<
   RequestBody,
   ResponseBody,
   IsNonJSONResponseExpected extends boolean,
@@ -111,7 +115,7 @@ export type ResourceChangeParams<
       >
     : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>)
 
-export type GetParams<
+export type GetParamsWrapper<
   ResponseBody,
   IsNonJSONResponseExpected extends boolean,
   IsEmptyResponseExpected extends boolean,
@@ -124,6 +128,20 @@ export type GetParams<
       IsEmptyResponseExpected
     >
   : FreeQueryParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
+
+export type DeleteParamsWrapper<
+  ResponseBody,
+  IsNonJSONResponseExpected extends boolean,
+  IsEmptyResponseExpected extends boolean,
+  RequestQuerySchema extends z.Schema | undefined = undefined,
+> = RequestQuerySchema extends z.Schema
+  ? DeleteParams<
+      RequestQuerySchema,
+      ResponseBody,
+      IsNonJSONResponseExpected,
+      IsEmptyResponseExpected
+    >
+  : FreeDeleteParams<ResponseBody, IsNonJSONResponseExpected, IsEmptyResponseExpected>
 
 export type PayloadRouteRequestParams<
   PathParams = undefined,
