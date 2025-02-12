@@ -63,6 +63,38 @@ const response = await sendGet(client, {
 
 if non-JSON responses are expected, the library will return null, if not, it will throw an error.
 
+### API contract-based requests
+
+`frontend-http-client` supports using API contracts, created with `@lokalise/universal-ts-utils/api-contracts/apiContracts` in order to make fully type-safe HTTP requests.
+
+Usage example:
+
+```ts
+import { somePostRouteDefinition, someGetRouteDefinition } from 'some-service-api-contracts'
+import { sendByPayloadRoute } from '@lokalise/frontend-http-client'
+import wretch from 'wretch'
+
+const client = wretch(BASE_URL)
+
+const responseBody1 = await sendByPayloadRoute(client, somePostRouteDefinition, {
+    pathParams: {
+        userId: 1,
+    },
+    body: {
+        isActive: true,
+    },
+})
+
+const responseBody2 = await sendByGetRoute(client, someGetRouteDefinition, {
+    pathParams: {
+        userId: 1,
+    },
+    queryParams: {
+        id: 'testId',
+    },
+})
+```
+
 ## Credits
 
 This library is brought to you by a joint effort of Lokalise engineers:
