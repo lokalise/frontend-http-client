@@ -1,5 +1,7 @@
 # Frontend HTTP client
 
+REPOSITORY DEPRECATION NOTICE: this library has been moved to https://github.com/lokalise/shared-ts-libs/tree/main/packages/app/frontend-http-client, please use that repository going forward.
+
 Opinionated HTTP client for the frontend.
 
 Note that it is a ESM-only package.
