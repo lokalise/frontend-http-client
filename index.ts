@@ -1,1 +1,11 @@
-export { sendPost, sendGet, sendPut, sendDelete, sendPatch, UNKNOWN_SCHEMA } from './src/client.js'
+export {
+  sendPost,
+  sendGet,
+  sendPut,
+  sendDelete,
+  sendPatch,
+  sendByGetRoute,
+  sendByPayloadRoute,
+  sendByDeleteRoute,
+  UNKNOWN_SCHEMA,
+} from './src/client.js'
