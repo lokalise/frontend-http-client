@@ -32,6 +32,7 @@
         "access": "public"
     },
     "scripts": {
+        "build": "npm run build:release",
         "build:dev": "tsc",
         "build:release": "tsup",
         "clean": "rimraf dist",
